@@ -20,7 +20,7 @@ module.exports.parse = function (cookie, command, req, res) {
                 login = query.query['login'],
                 password = query.query['password'];
 
-            if (typeof login == 'undefined' || typeof password == 'undefined')
+            if (typeof cookie == 'undefined' || typeof login == 'undefined' || typeof password == 'undefined')
                 return front.returnBadRequest(res);
 
             db.checkPassword(login, password)
@@ -29,7 +29,13 @@ module.exports.parse = function (cookie, command, req, res) {
                         db.createSession(login, cookie)
                             .then(function () {
                                 res.writeHead(200, { 'Content-Type': 'application/json' });
-                                res.end(JSON.stringify({ success: true }));
+                                res.end(JSON.stringify({
+                                    success: true,
+                                    next: 'done',
+                                }));
+                            })
+                            .catch(function (err) {
+                                console.error(err);
                             });
                         return;
                     }

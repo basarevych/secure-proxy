@@ -49,13 +49,7 @@ server = http.createServer(function (req, res) {
             .then(function (random) {
                 res.oldWriteHead = res.writeHead;
                 res.writeHead = function (statusCode, headers) {
-                    var cookie = res.getHeader('set-cookie');
-                    if (typeof cookie == 'undefined')
-                        cookie = '';
-                    else
-                        cookie += '; ';
-                    cookie += config['cookie'] + '=' + random + '; Path=/';
-
+                    var cookie = config['cookie'] + '=' + random + '; path=/';
                     res.setHeader('set-cookie', cookie);
                     res.oldWriteHead(statusCode, headers);
                 }

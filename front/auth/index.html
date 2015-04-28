@@ -123,6 +123,10 @@
                         messages.empty();
 
                         if (data.success) {
+                            if (data.next == 'done') {
+                                $('#login-form').slideUp(function () { window.location.reload(); });
+                                return;
+                            }
                         } else {
                             var msg = $('<div></div>');
                             msg.addClass('alert alert-danger')

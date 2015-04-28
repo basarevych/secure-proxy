@@ -78,7 +78,7 @@ module.exports.selectUser = function (login) {
             defer.resolve(row);
         }
     );
-    check.finalize();
+    sel.finalize();
 
     return defer.promise;
 };
@@ -182,27 +182,14 @@ module.exports.setPassword = function (login, password) {
 module.exports.checkPassword = function (login, password) {
     var defer = q.defer();
 
-    var user = db.prepare(
-        "SELECT *"
-      + "   FROM users"
-      + "   WHERE login = $login"
-    );
-    user.get(
-        {
-            $login: login
-        },
-        function (err, row) {
-            if (err) {
-                defer.reject(err);
-                return;
-            }
-
-            if (typeof row == 'undefined') {
+    module.exports.selectUser(login)
+        .then(function (user) {
+            if (typeof user == 'undefined') {
                 defer.resolve(false);
                 return;
             }
 
-            bcrypt.compare(password, row['password'], function (err, match) {
+            bcrypt.compare(password, user['password'], function (err, match) {
                 if (err) {
                     defer.reject(err);
                     return;
@@ -210,9 +197,10 @@ module.exports.checkPassword = function (login, password) {
 
                 defer.resolve(match);
             });
-        }
-    );
-    user.finalize();
+        })
+        .catch(function (err) {
+            defer.reject(err);
+        });
 
     return defer.promise;
 };
@@ -295,7 +283,7 @@ module.exports.selectSession = function (cookie) {
 module.exports.createSession = function (login, cookie) {
     var defer = q.defer();
 
-    moudle.exports.selectUser(login)
+    module.exports.selectUser(login)
         .then(function (user) {
             var ins = db.prepare(
                 "INSERT INTO"
