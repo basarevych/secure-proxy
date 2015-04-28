@@ -44,7 +44,10 @@ server = http.createServer(function (req, res) {
                 var defer = q.defer();
 
                 crypto.randomBytes(16, function (ex, buf) {
-                    defer.resolve(buf.toString('hex'));
+                    if (ex)
+                        defer.reject(ex);
+                    else
+                        defer.resolve(buf.toString('hex'));
                 });
 
                 defer.promise
@@ -54,6 +57,10 @@ server = http.createServer(function (req, res) {
                     })
                     .then(function () {
                         front.returnFile('auth/index.html', res);
+                    })
+                    .catch(function (err) {
+                        console.error(err);
+                        front.returnInternalError(res);
                     });
 
                 return;

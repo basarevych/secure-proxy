@@ -35,6 +35,31 @@ module.exports.parse = function (sid, command, req, res) {
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ locale: result }));
             break;
+
+        case 'logout':
+            db.sessionExists(sid)
+                .then(function (exists) {
+                    if (exists) {
+                        db.deleteSession(sid)
+                            .then(function () {
+                                res.writeHead(200, { 'Content-Type': 'application/json' });
+                                res.end(JSON.stringify({ success: true }));
+                            })
+                            .catch(function (err) {
+                                console.error(err);
+                                front.returnInternalError(res);
+                            });
+                        return;
+                    }
+
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false }));
+                })
+                .catch(function (err) {
+                    console.error(err);
+                });
+            break;
+
         case 'auth':
             var query = url.parse(req.url, true),
                 login = query.query['login'],
@@ -64,10 +89,12 @@ module.exports.parse = function (sid, command, req, res) {
                                     })
                                     .catch(function (err) {
                                         console.error(err);
+                                        front.returnInternalError(res);
                                     });
                             })
                             .catch(function (err) {
                                 console.error(err);
+                                front.returnInternalError(res);
                             });
                         return;
                     }
@@ -76,6 +103,7 @@ module.exports.parse = function (sid, command, req, res) {
                     res.end(JSON.stringify({ success: false }));
                 });
             break;
+
         default:
             return front.returnNotFound(res);
     }
