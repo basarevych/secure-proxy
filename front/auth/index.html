@@ -1,0 +1,143 @@
+<html ng-app="App">
+    <head>
+        <title id="page-title"></title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta charset="UTF-8">
+
+        <link rel="stylesheet" href="/secure-proxy/static/bower_components/bootstrap/dist/css/bootstrap.min.css">
+        <link rel="stylesheet" href="/secure-proxy/static/bower_components/bootstrap/dist/css/bootstrap-theme.min.css">
+        <link rel="stylesheet" href="/secure-proxy/static/auth/css/index.css">
+
+        <script src="/secure-proxy/static/bower_components/jquery/dist/jquery.min.js"></script>
+        <script src="/secure-proxy/static/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+
+        <script src="/secure-proxy/static/bower_components/cldrjs/dist/cldr.js"></script>
+        <script src="/secure-proxy/static/bower_components/cldrjs/dist/cldr/event.js"></script>
+        <script src="/secure-proxy/static/bower_components/cldrjs/dist/cldr/supplemental.js"></script>
+
+        <script src="/secure-proxy/static/bower_components/globalize/dist/globalize.js"></script>
+        <script src="/secure-proxy/static/bower_components/globalize/dist/globalize/message.js"></script>
+        <script src="/secure-proxy/static/bower_components/globalize/dist/globalize/number.js"></script>
+        <script src="/secure-proxy/static/bower_components/globalize/dist/globalize/plural.js"></script>
+        <script src="/secure-proxy/static/bower_components/globalize/dist/globalize/currency.js"></script>
+        <script src="/secure-proxy/static/bower_components/globalize/dist/globalize/date.js"></script>
+
+        <script src="/secure-proxy/static/auth/js/globalizer.js"></script>
+        <script src="/secure-proxy/static/auth/js/validator.js"></script>
+        <script src="/secure-proxy/static/auth/js/handlers.js"></script>
+    </head>
+    <body>
+        <div class="centered-wrapper">
+            <div class="centered">
+                <div id="login-form" class="col-xs-offset-1 col-xs-10 col-sm-offset-2 col-sm-8 col-md-offset-3 col-md-6">
+                    <div class="localization">
+                        <a class="language" href="javascript:setLocale('en')">
+                            <img src="/secure-proxy/static/img/flags/en.gif"> en
+                        </a>
+                        <a class="language" href="javascript:setLocale('ru')">
+                            <img src="/secure-proxy/static/img/flags/ru.gif"> ru
+                        </a>
+                    </div>
+                    <form class="form-horizontal" onsubmit="return false">
+                        <div id="login-messages"></div>
+                        <div class="form-group">
+                            <label id="login-label" class="col-sm-4 control-label" for="login"></label>
+                            <div class="col-sm-8">
+                                <input class="form-control" type="text" name="login" id="login"
+                                       data-on-blur="validateFormField($('input[name=login]'))"
+                                       data-on-enter="$('input[name=password]').focus()">
+                                <div class="help-block">
+                                    <ul class="list-unstyled icon-list error-list">
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label id="password-label" class="col-sm-4 control-label" for="password"></label>
+                            <div class="col-sm-8">
+                                <input class="form-control" type="password" name="password" id="password"
+                                       data-on-blur="validateFormField($('input[name=password]'))"
+                                       data-on-enter="submitLoginForm()">
+                                <div class="help-block">
+                                    <ul class="list-unstyled icon-list error-list">
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="col-sm-offset-4 col-sm-8">
+                                <button id="submit-button" class="btn btn-default" type="submit" onclick="submitLoginForm()"></button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <script>
+            var gl = null;
+
+            function setLocale(locale) {
+                var form = $('#login-form');
+                if (form.css('display') != 'none')
+                    form.hide();
+
+                var promise = globalizer(
+                    '/secure-proxy/static/bower_components/cldr-data',
+                    '/secure-proxy/static/l10n',
+                    locale
+                );
+
+                $.when(promise)
+                    .then(function (globalize) {
+                        gl = window['globalize'] = globalize;
+                        initPage();
+                    });
+            }
+
+            function initPage() {
+                $('#page-title').text(gl.formatMessage('PAGE_TITLE'));
+                $('#login-label').text(gl.formatMessage('USERNAME_LABEL') + ':');
+                $('#password-label').text(gl.formatMessage('PASSWORD_LABEL') + ':');
+                $('#submit-button').text(gl.formatMessage('SUBMIT_LABEL'));
+                $('#login-form').slideDown(function () { $('#login').focus() });
+            }
+
+            function submitLoginForm() {
+                var login = validateFormField($('#login')),
+                    password = validateFormField($('#password'));
+
+                if (!login || !password)
+                    return;
+
+                $.ajax({
+                    url: '/secure-proxy/api/auth',
+                    method: 'GET',
+                    data: {
+                        login: $('#login').val(),
+                        password: $('#password').val(),
+                    },
+                    success: function (data) {
+                        var messages = $('#login-messages');
+                        messages.empty();
+
+                        if (data.success) {
+                        } else {
+                            var msg = $('<div></div>');
+                            msg.addClass('alert alert-danger')
+                               .text(gl.formatMessage('INVALID_LOGIN'))
+                               .appendTo(messages);
+                        }
+                    }
+                });
+            }
+
+            $(document).ready(function () {
+                $.getJSON('/secure-proxy/api/locale', function (data) {
+                    setLocale(data.locale);
+                });
+            });
+        </script>
+    </body>
+</html>

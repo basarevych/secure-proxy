@@ -1,0 +1,10 @@
+{
+    "ru": {
+        "PAGE_TITLE": "Запретная зона",
+        "USERNAME_LABEL": "Логин",
+        "PASSWORD_LABEL": "Пароль",
+        "SUBMIT_LABEL": "Войти",
+        "FIELD_EMPTY": "Поле обязательно и не может быть пустым",
+        "INVALID_LOGIN": "Неправильный логин или пароль"
+    }
+}
