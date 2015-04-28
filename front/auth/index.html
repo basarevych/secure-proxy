@@ -89,7 +89,7 @@
                     locale
                 );
 
-                $.when(promise)
+                promise
                     .then(function (globalize) {
                         gl = window['globalize'] = globalize;
                         initPage();
@@ -101,6 +101,8 @@
                 $('#login-label').text(gl.formatMessage('USERNAME_LABEL') + ':');
                 $('#password-label').text(gl.formatMessage('PASSWORD_LABEL') + ':');
                 $('#submit-button').text(gl.formatMessage('SUBMIT_LABEL'));
+                $('#login-form .form-group').removeClass('has-error');
+                $('#login-form .help-block ul').empty();
                 $('#login-form').slideDown(function () { $('#login').focus() });
             }
 
@@ -108,8 +110,15 @@
                 var login = validateFormField($('#login')),
                     password = validateFormField($('#password'));
 
-                if (!login || !password)
+                if (!login) {
+                    $('#login').focus();
                     return;
+                }
+
+                if (!password) {
+                    $('#password').focus();
+                    return;
+                }
 
                 $.ajax({
                     url: '/secure-proxy/api/auth',

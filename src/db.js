@@ -22,8 +22,9 @@ db.serialize(function () {
         "CREATE TABLE IF NOT EXISTS sessions ("
       + "  id INTEGER PRIMARY KEY ASC NOT NULL,"
       + "  user_id INTERGER NOT NULL,"
-      + "  cookie VARCHAR(255) NOT NULL,"
-      + "  CONSTRAINT session_cookie_unique UNIQUE (cookie),"
+      + "  sid VARCHAR(255) NOT NULL,"
+      + "  last TIMESTAMP NOT NULL,"
+      + "  CONSTRAINT session_sid_unique UNIQUE (sid),"
       + "  CONSTRAINT session_user_fk FOREIGN KEY (user_id)"
       + "    REFERENCES users(id)"
       + "    ON DELETE CASCADE ON UPDATE CASCADE"
@@ -230,17 +231,17 @@ module.exports.setLdap = function (login, ldap) {
     return defer.promise;
 };
 
-module.exports.sessionExists = function (cookie) {
+module.exports.sessionExists = function (sid) {
     var defer = q.defer();
 
     var check = db.prepare(
         "SELECT COUNT(*) AS count"
       + "   FROM sessions"
-      + "   WHERE cookie = $cookie"
+      + "   WHERE sid = $sid"
     );
     check.get(
         {
-            $cookie: cookie
+            $sid: sid
         },
         function (err, row) {
             if (err) {
@@ -255,17 +256,17 @@ module.exports.sessionExists = function (cookie) {
     return defer.promise;
 };
 
-module.exports.selectSession = function (cookie) {
+module.exports.selectSession = function (sid) {
     var defer = q.defer();
 
     var sel = db.prepare(
         "SELECT *"
       + "   FROM sessions"
-      + "   WHERE cookie = $cookie"
+      + "   WHERE sid = $sid"
     );
     sel.get(
         {
-            $cookie: cookie
+            $sid: sid
         },
         function (err, row) {
             if (err) {
@@ -275,25 +276,27 @@ module.exports.selectSession = function (cookie) {
             defer.resolve(row);
         }
     );
-    check.finalize();
+    sel.finalize();
 
     return defer.promise;
 };
 
-module.exports.createSession = function (login, cookie) {
-    var defer = q.defer();
+module.exports.createSession = function (login, sid) {
+    var defer = q.defer(),
+        now = new Date().getTime();
 
     module.exports.selectUser(login)
         .then(function (user) {
             var ins = db.prepare(
                 "INSERT INTO"
-              + "   sessions(user_id, cookie)"
-              + "   VALUES($user_id, $cookie)"
+              + "   sessions(user_id, sid, last)"
+              + "   VALUES($user_id, $sid, $last)"
             );
             ins.run(
                 {
                     $user_id: user['id'],
-                    $cookie: cookie,
+                    $sid: sid,
+                    $last: now,
                 },
                 function (err) {
                     if (err) {
@@ -313,16 +316,42 @@ module.exports.createSession = function (login, cookie) {
     return defer.promise;
 };
 
-module.exports.deleteSession = function (cookie, cb) {
+module.exports.refreshSession = function (sid) {
+    var defer = q.defer(),
+        now = new Date().getTime();
+
+    var del = db.prepare(
+        "UPDATE sessions"
+      + "   SET last = $last"
+      + "   WHERE sid = $sid"
+    );
+    del.run(
+        {
+            $last: now,
+            $sid: sid
+        },
+        function (err) {
+            if (err)
+                defer.reject(err);
+            else
+                defer.resolve();
+        }
+    );
+    del.finalize();
+
+    return defer.promise;
+};
+
+module.exports.deleteSession = function (sid) {
     var defer = q.defer();
 
     var del = db.prepare(
         "DELETE FROM sessions"
-      + "   WHERE cookie = $cookie"
+      + "   WHERE sid = $sid"
     );
     del.run(
         {
-            $cookie: cookie
+            $sid: sid
         },
         function (err) {
             if (err)

@@ -5,7 +5,7 @@ var url = require('url'),
 
 module.exports = {};
 
-module.exports.parse = function (cookie, command, req, res) {
+module.exports.parse = function (sid, command, req, res) {
     switch (command) {
         case 'locale':
             locale.Locale["default"] = 'en';
@@ -20,19 +20,31 @@ module.exports.parse = function (cookie, command, req, res) {
                 login = query.query['login'],
                 password = query.query['password'];
 
-            if (typeof cookie == 'undefined' || typeof login == 'undefined' || typeof password == 'undefined')
+            if (typeof sid == 'undefined' || typeof login == 'undefined' || typeof password == 'undefined')
                 return front.returnBadRequest(res);
 
             db.checkPassword(login, password)
                 .then(function (match) {
                     if (match) {
-                        db.createSession(login, cookie)
-                            .then(function () {
-                                res.writeHead(200, { 'Content-Type': 'application/json' });
-                                res.end(JSON.stringify({
-                                    success: true,
-                                    next: 'done',
-                                }));
+                        db.selectSession(sid)
+                            .then(function (session) {
+                                var promise = null;
+                                if (typeof session == 'undefined')
+                                    promise = db.createSession(login, sid);
+                                else
+                                    promise = db.refreshSession(sid);
+
+                                promise
+                                    .then(function () {
+                                        res.writeHead(200, { 'Content-Type': 'application/json' });
+                                        res.end(JSON.stringify({
+                                            success: true,
+                                            next: 'done',
+                                        }));
+                                    })
+                                    .catch(function (err) {
+                                        console.error(err);
+                                    });
                             })
                             .catch(function (err) {
                                 console.error(err);
