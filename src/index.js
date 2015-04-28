@@ -49,12 +49,8 @@ server = http.createServer(function (req, res) {
 
                 defer.promise
                     .then(function (random) {
-                        res.oldWriteHead = res.writeHead;
-                        res.writeHead = function (statusCode, headers) {
-                            var cookie = config['cookie'] + 'sid=' + random + '; path=/';
-                            res.setHeader('set-cookie', cookie);
-                            res.oldWriteHead(statusCode, headers);
-                        }
+                        var header = config['cookie'] + 'sid=' + random + '; path=/';
+                        res.setHeader('set-cookie', header);
                     })
                     .then(function () {
                         front.returnFile('auth/index.html', res);

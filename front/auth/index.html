@@ -78,7 +78,7 @@
         <script>
             var gl = null;
 
-            function setLocale(locale) {
+            function loadLocale(locale) {
                 var form = $('#login-form');
                 if (form.css('display') != 'none')
                     form.hide();
@@ -94,6 +94,18 @@
                         gl = window['globalize'] = globalize;
                         initPage();
                     });
+            }
+
+            function setLocale(locale) {
+                $.ajax({
+                    url: '/secure-proxy/api/locale',
+                    data: {
+                        set: locale,
+                    },
+                    success: function (data) {
+                        loadLocale(data.locale);
+                    }
+                });
             }
 
             function initPage() {
@@ -148,7 +160,7 @@
 
             $(document).ready(function () {
                 $.getJSON('/secure-proxy/api/locale', function (data) {
-                    setLocale(data.locale);
+                    loadLocale(data.locale);
                 });
             });
         </script>

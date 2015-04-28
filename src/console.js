@@ -1,5 +1,5 @@
-var readline = require('readline'),
-    db = require('./db.js');
+var readline    = require('readline'),
+    db          = require('./db.js');
 
 var rl = readline.createInterface({
     input: process.stdin,

@@ -1,7 +1,7 @@
-var fs = require("fs"),
-    sqlite3 = require("sqlite3"),
-    q = require('q'),
-    bcrypt = require("bcrypt");
+var fs          = require("fs"),
+    sqlite3     = require("sqlite3"),
+    q           = require('q'),
+    bcrypt      = require("bcrypt");
 
 var dbFile = __dirname + "/../data/secure-proxy.db";
 if (!fs.existsSync(dbFile))

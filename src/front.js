@@ -1,5 +1,5 @@
-var path = require('path'),
-    fs = require('fs');
+var path        = require('path'),
+    fs          = require('fs');
 
 function getRealPath(filename) {
     if (filename.indexOf('..') != -1)
@@ -46,9 +46,8 @@ module.exports.returnBadRequest = function (res) {
 
 module.exports.returnFile = function (filename, res) {
     var realPath = getRealPath(filename);
-    if (realPath === false) {
-        return return404(res);
-    }
+    if (realPath === false)
+        return module.exports.returnNotFound(res);
 
     var type = 'application/octet-stream';
     switch (path.extname(filename)) {

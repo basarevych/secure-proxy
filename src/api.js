@@ -1,7 +1,8 @@
-var url = require('url'),
-    locale = require('locale'),
-    front = require('./front.js'),
-    db = require('./db.js');
+var url         = require('url'),
+    locale      = require('locale'),
+    config      = require('../config.js')
+    front       = require('./front.js'),
+    db          = require('./db.js');
 
 module.exports = {};
 
@@ -9,11 +10,30 @@ module.exports.parse = function (sid, command, req, res) {
     switch (command) {
         case 'locale':
             locale.Locale["default"] = 'en';
-            var supported = new locale.Locales([ 'en', 'ru' ]),
+            var query = url.parse(req.url, true),
+                set = query.query['set'],
+                cookies = front.parseCookies(req),
+                cookie = cookies[config['cookie'] + 'locale'],
+                supported = [ 'en', 'ru' ],
                 locales = new locale.Locales(req.headers["accept-language"])
 
+            var result = null;
+            if (typeof set != 'undefined' && supported.indexOf(set) != -1) {
+                result = set;
+
+                var header = config['cookie'] + 'locale=' + set + '; path=/';
+                res.setHeader('set-cookie', header);
+            }
+
+            if (!result) {
+                if (typeof cookie != 'undefined' && supported.indexOf(cookie) != -1)
+                    result = cookie;
+                else
+                    result = locales.best(new locale.Locales(supported));
+            }
+
             res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ locale: locales.best(supported) }));
+            res.end(JSON.stringify({ locale: result }));
             break;
         case 'auth':
             var query = url.parse(req.url, true),
