@@ -85,8 +85,6 @@ q.all(bindPromises)
     });
 
 function requestListener(req, res) {
-    console.log('User ID: ' + process.getuid() + ', Group ID: ' + process.getgid());
-
     var cookies = front.parseCookies(req),
         sid = cookies[config['cookie'] + 'sid'],
         query = url.parse(req.url),
