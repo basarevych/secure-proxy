@@ -8,6 +8,8 @@
 
 : ${secure_proxy_enable="NO"}
 : ${secure_proxy_path="/usr/local/secure-proxy"}
+: ${secure_proxy_http=""}
+: ${secure_proxy_https=""}
 
 name="secure-proxy"
 rcvar=`set_rcvar`

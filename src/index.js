@@ -47,12 +47,20 @@ proxy.on('error', function (err, req, res) {
     front.returnInternalError(res);
 });
 
+var bindPromises = [];
+
 if (httpOption) {
+    var httpDefer = q.defer();
+    bindPromises.push(httpDefer.promise);
+
     httpServer = http.createServer(requestListener);
-    httpServer.listen(httpOption[1], httpOption[0]);
+    httpServer.listen(httpOption[1], httpOption[0], function () { httpDefer.resolve(); });
 }
 
 if (httpsOption) {
+    var httpsDefer = q.defer();
+    bindPromises.push(httpsDefer.promise);
+
     httpsServer = https.createServer(
         {
             key: fs.readFileSync(config['ssl']['key'], 'utf8'),
@@ -60,11 +68,23 @@ if (httpsOption) {
         },
         requestListener
     );
-    httpsServer.listen(httpsOption[1], httpsOption[0]);
+    httpsServer.listen(httpsOption[1], httpsOption[0], function () { httpsDefer.resolve(); });
 }
 
+q.all(bindPromises)
+    .then(function () {
+        try {
+            process.setgid(config['user']);
+            process.setuid(config['group']);
+        } catch (err) {
+            console.error(err);
+            process.exit(1);
+        }
+    });
 
 function requestListener(req, res) {
+    console.log('User ID: ' + process.getuid() + ', Group ID: ' + process.getgid());
+
     var cookies = front.parseCookies(req),
         sid = cookies[config['cookie'] + 'sid'],
         query = url.parse(req.url),
