@@ -1,0 +1,42 @@
+#!/bin/sh
+
+# PROVIDE: secure-proxy
+# REQUIRE: DAEMON
+# BEFORE:  LOGIN
+
+. /etc/rc.subr
+
+: ${secure_proxy_enable="NO"}
+: ${secure_proxy_path="/usr/local/secure-proxy"}
+
+name="secure-proxy"
+rcvar=`set_rcvar`
+
+load_rc_config $name
+
+command="$eximanager_path/bin/app.pl"
+command_args="&"
+command_interpreter="perl"
+start_cmd="eximanager_start"
+
+eximanager_start()
+{
+    if [ ! -d "$eximanager_path" ]; then
+        echo "eximanager_path is invalid"
+        exit 1
+    fi
+    if [ ! -r "$eximanager_path/config.yml" ]; then
+        echo "Could not open config.yml"
+        exit 1
+    fi
+
+    eximanager_user=`grep "exim_user:" "$eximanager_path/config.yml" | awk -F: '{ print $2 }' | tr -d '" '`
+    if [ -z "$eximanager_user" ]; then
+        echo "Set exim_user in config.yml"
+        exit 1
+    fi
+
+    su -m $eximanager_user -c "exec \"$command\" $command_args"
+}
+
+run_rc_command "$1"

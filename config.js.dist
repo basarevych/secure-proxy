@@ -1,4 +1,8 @@
 module.exports = {
-    target: 'http://127.0.0.1:8080',
-    cookie: 'secureproxy',   // Cookie prefix - alphanumeric
+    target: 'http://127.0.0.1:80',  // The target server
+    cookie: 'secureproxy',          // Cookies prefix - alphanumeric
+    ssl: {                          // Ignored if HTTPS is not enabled
+        key: '/etc/certs/server.unencrypted.key',
+        cert: '/etc/certs/server.crt',
+    },
 };

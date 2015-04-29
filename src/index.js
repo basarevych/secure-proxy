@@ -1,23 +1,70 @@
-var http        = require('http'),
+var argv        = require('minimist')(process.argv.slice(2)),
+    http        = require('http'),
+    https       = require('https'),
     httpProxy   = require('http-proxy'),
     url         = require('url')
     q           = require('q'),
     crypto      = require('crypto'),
+    fs          = require('fs'),
     config      = require('../config.js')
     front       = require('./front.js')
     api         = require('./api.js'),
     db          = require('./db.js');
 
+var httpOption = argv['h'] ? argv['h'] : argv['http'];
+    httpsOption = argv['s'] ? argv['s'] : argv['https'];
+
+if (typeof httpOption != 'string' && typeof httpsOption != 'string') {
+    console.log("Usage: node src/index.js <options>\n");
+    console.log("Options:");
+    console.log("\t-h, --http=host:port\tCreate HTTP server");
+    console.log("\t-s, --https=host:port\tCreate HTTPS server");
+    console.log("\nAt least one -h or -s option must be provided");
+    return;
+}
+
+if (httpOption) {
+    httpOption = httpOption.split(':');
+    if (httpOption.length != 2) {
+        console.log('-h [--http] option expects "hostname:portnumber" string');
+        return;
+    }
+}
+if (httpsOption) {
+    httpsOption = httpsOption.split(':');
+    if (httpsOption.length != 2) {
+        console.log('-s [--https] option expects "hostname:portnumber" string');
+        return;
+    }
+}
+
 var proxy = httpProxy.createProxyServer({
     target: config['target'],
+    xfwd: true,
 });
-
 proxy.on('error', function (err, req, res) {
     console.error(err);
     front.returnInternalError(res);
 });
 
-server = http.createServer(function (req, res) {
+if (httpOption) {
+    httpServer = http.createServer(requestListener);
+    httpServer.listen(httpOption[1], httpOption[0]);
+}
+
+if (httpsOption) {
+    httpsServer = https.createServer(
+        {
+            key: fs.readFileSync(config['ssl']['key'], 'utf8'),
+            cert: fs.readFileSync(config['ssl']['cert'], 'utf8')
+        },
+        requestListener
+    );
+    httpsServer.listen(httpsOption[1], httpsOption[0]);
+}
+
+
+function requestListener(req, res) {
     var cookies = front.parseCookies(req),
         sid = cookies[config['cookie'] + 'sid'],
         query = url.parse(req.url),
@@ -73,6 +120,4 @@ server = http.createServer(function (req, res) {
         .catch(function (err) {
             console.error(err);
         });
-});
-
-server.listen(8000);
+};
