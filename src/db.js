@@ -1,7 +1,11 @@
-var fs          = require("fs"),
-    sqlite3     = require("sqlite3"),
+'use strict'
+
+var fs          = require('fs'),
+    sqlite3     = require('sqlite3'),
     q           = require('q'),
-    bcrypt      = require("bcrypt");
+    bcrypt      = require('bcrypt'),
+    speakeasy   = require('speakeasy'),
+    config      = require('../config.js');
 
 var dbFile = __dirname + "/../data/secure-proxy.db";
 if (!fs.existsSync(dbFile))
@@ -24,6 +28,9 @@ db.serialize(function () {
       + "  user_id INTERGER NOT NULL,"
       + "  sid VARCHAR(255) NOT NULL,"
       + "  last TIMESTAMP NOT NULL,"
+      + "  otp_key TEXT NOT NULL,"
+      + "  auth_password BOOLEAN NOT NULL,"
+      + "  auth_otp BOOLEAN NOT NULL,"
       + "  CONSTRAINT session_sid_unique UNIQUE (sid),"
       + "  CONSTRAINT session_user_fk FOREIGN KEY (user_id)"
       + "    REFERENCES users(id)"
@@ -104,7 +111,7 @@ module.exports.createUser = function (login, password, ldap) {
                 return;
             }
 
-            module.exports.setPassword(login, password)
+            module.exports.setUserPassword(login, password)
                 .then(function (data) {
                     defer.resolve(data);
                 })
@@ -141,7 +148,7 @@ module.exports.deleteUser = function (login) {
     return defer.promise;
 };
 
-module.exports.setPassword = function (login, password) {
+module.exports.setUserPassword = function (login, password) {
     var defer = q.defer();
 
     bcrypt.genSalt(10, function (err, salt) {
@@ -180,7 +187,7 @@ module.exports.setPassword = function (login, password) {
     return defer.promise;
 };
 
-module.exports.checkPassword = function (login, password) {
+module.exports.checkUserPassword = function (login, password) {
     var defer = q.defer();
 
     module.exports.selectUser(login)
@@ -206,7 +213,7 @@ module.exports.checkPassword = function (login, password) {
     return defer.promise;
 };
 
-module.exports.setLdap = function (login, ldap) {
+module.exports.setUserLdap = function (login, ldap) {
     var defer = q.defer();
 
     var upd = db.prepare(
@@ -287,16 +294,23 @@ module.exports.createSession = function (login, sid) {
 
     module.exports.selectUser(login)
         .then(function (user) {
+            var key = speakeasy.generate_key({
+                length: 20,
+                name: config['namespace'],
+            });
             var ins = db.prepare(
                 "INSERT INTO"
-              + "   sessions(user_id, sid, last)"
-              + "   VALUES($user_id, $sid, $last)"
+              + "   sessions(user_id, sid, last, otp_key, auth_password, auth_otp)"
+              + "   VALUES($user_id, $sid, $last, $otp_key, $auth_password, $auth_otp)"
             );
             ins.run(
                 {
                     $user_id: user['id'],
                     $sid: sid,
                     $last: now,
+                    $otp_key: key.base32,
+                    $auth_password: false,
+                    $auth_otp: false,
                 },
                 function (err) {
                     if (err) {
@@ -312,32 +326,6 @@ module.exports.createSession = function (login, sid) {
         .catch(function (err) {
             defer.reject(err);
         });
-
-    return defer.promise;
-};
-
-module.exports.refreshSession = function (sid) {
-    var defer = q.defer(),
-        now = new Date().getTime();
-
-    var del = db.prepare(
-        "UPDATE sessions"
-      + "   SET last = $last"
-      + "   WHERE sid = $sid"
-    );
-    del.run(
-        {
-            $last: now,
-            $sid: sid
-        },
-        function (err) {
-            if (err)
-                defer.reject(err);
-            else
-                defer.resolve();
-        }
-    );
-    del.finalize();
 
     return defer.promise;
 };
@@ -361,6 +349,102 @@ module.exports.deleteSession = function (sid) {
         }
     );
     del.finalize();
+
+    return defer.promise;
+};
+
+module.exports.refreshSession = function (sid) {
+    var defer = q.defer(),
+        now = new Date().getTime();
+
+    var upd = db.prepare(
+        "UPDATE sessions"
+      + "   SET last = $last"
+      + "   WHERE sid = $sid"
+    );
+    upd.run(
+        {
+            $last: now,
+            $sid: sid
+        },
+        function (err) {
+            if (err)
+                defer.reject(err);
+            else
+                defer.resolve();
+        }
+    );
+    upd.finalize();
+
+    return defer.promise;
+};
+
+module.exports.setSessionPassword = function (sid, password) {
+    var defer = q.defer();
+
+    var upd = db.prepare(
+        "UPDATE sessions"
+      + "   SET auth_password = $auth_password"
+      + "   WHERE sid = $sid"
+    );
+    upd.run(
+        {
+            $auth_password: password,
+            $sid: sid
+        },
+        function (err) {
+            if (err)
+                defer.reject(err);
+            else
+                defer.resolve();
+        }
+    );
+    upd.finalize();
+
+    return defer.promise;
+};
+
+module.exports.setSessionOtp = function (sid, otp) {
+    var defer = q.defer();
+
+    var upd = db.prepare(
+        "UPDATE sessions"
+      + "   SET auth_otp = $auth_otp"
+      + "   WHERE sid = $sid"
+    );
+    upd.run(
+        {
+            $auth_otp: otp,
+            $sid: sid
+        },
+        function (err) {
+            if (err)
+                defer.reject(err);
+            else
+                defer.resolve();
+        }
+    );
+    upd.finalize();
+
+    return defer.promise;
+};
+
+module.exports.checkSessionOtp = function (sid, otp) {
+    var defer = q.defer();
+
+    module.exports.selectSession(sid)
+        .then(function (session) {
+            if (typeof session == 'undefined') {
+                defer.resolve(false);
+                return;
+            }
+
+            var correct = speakeasy.time({key: session['otp_key'], encoding: 'base32'});
+            defer.resolve(correct == otp);
+        })
+        .catch(function (err) {
+            defer.reject(err);
+        });
 
     return defer.promise;
 };

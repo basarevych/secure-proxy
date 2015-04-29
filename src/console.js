@@ -1,3 +1,5 @@
+'use strict'
+
 var readline    = require('readline'),
     db          = require('./db.js');
 
@@ -29,8 +31,8 @@ switch (process.argv[2]) {
                     db.userExists(username)
                         .then(function (exists) {
                             if (exists) {
-                                db.setPassword(username, password)
-                                    .then(db.setLdap(ldap == 'y'))
+                                db.setUserPassword(username, password)
+                                    .then(db.setUserLdap(username, ldap == 'y'))
                                     .then(function () {
                                         rl.write("==> User exists, password and ldap flag are changed\n");
                                         rl.close();

@@ -1,6 +1,8 @@
+'use strict'
+
 var url         = require('url'),
     locale      = require('locale'),
-    config      = require('../config.js')
+    config      = require('../config.js'),
     front       = require('./front.js'),
     db          = require('./db.js');
 
@@ -13,7 +15,7 @@ module.exports.parse = function (sid, command, req, res) {
             var query = url.parse(req.url, true),
                 set = query.query['set'],
                 cookies = front.parseCookies(req),
-                cookie = cookies[config['cookie'] + 'locale'],
+                cookie = cookies[config['namspace'] + 'locale'],
                 supported = [ 'en', 'ru' ],
                 locales = new locale.Locales(req.headers["accept-language"])
 
@@ -21,7 +23,7 @@ module.exports.parse = function (sid, command, req, res) {
             if (typeof set != 'undefined' && supported.indexOf(set) != -1) {
                 result = set;
 
-                var header = config['cookie'] + 'locale=' + set + '; path=/';
+                var header = config['namespace'] + 'locale=' + set + '; path=/';
                 res.setHeader('set-cookie', header);
             }
 
@@ -68,7 +70,7 @@ module.exports.parse = function (sid, command, req, res) {
             if (typeof sid == 'undefined' || typeof login == 'undefined' || typeof password == 'undefined')
                 return front.returnBadRequest(res);
 
-            db.checkPassword(login, password)
+            db.checkUserPassword(login, password)
                 .then(function (match) {
                     if (match) {
                         db.selectSession(sid)
@@ -81,11 +83,18 @@ module.exports.parse = function (sid, command, req, res) {
 
                                 promise
                                     .then(function () {
-                                        res.writeHead(200, { 'Content-Type': 'application/json' });
-                                        res.end(JSON.stringify({
-                                            success: true,
-                                            next: 'done',
-                                        }));
+                                        db.setSessionPassword(sid, true)
+                                            .then(function () {
+                                                res.writeHead(200, { 'Content-Type': 'application/json' });
+                                                res.end(JSON.stringify({
+                                                    success: true,
+                                                    next: config['enable_otp'] ? 'otp' : 'done',
+                                                }));
+                                            })
+                                            .catch(function (err) {
+                                                console.error(err);
+                                                front.returnInternalError(res);
+                                            });
                                     })
                                     .catch(function (err) {
                                         console.error(err);
@@ -101,6 +110,65 @@ module.exports.parse = function (sid, command, req, res) {
 
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false }));
+                });
+            break;
+
+        case 'otp':
+            var query = url.parse(req.url, true),
+                action = query.query['action'];
+                result = query.query['result'];
+
+            if (typeof sid == 'undefined' || typeof action == 'undefined')
+                return front.returnBadRequest(res);
+
+            db.selectSession(sid)
+                .then(function (session) {
+                    if (!session) {
+                        res.writeHead(200, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({
+                            success: false,
+                            next: 'password',
+                        }));
+                        return;
+                    }
+
+                    if (action == 'get') {
+                        res.writeHead(200, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({
+                            qr_code: 'otpauth://totp/' + config['namespace'] + '?secret=' + session['otp_key'],
+                        }));
+                    } else if (action = 'check') {
+                        db.checkSessionOtp(sid, result)
+                            .then(function (correct) {
+                                if (correct) {
+                                    db.setSessionOtp(sid, true)
+                                        .then(function () {
+                                            res.writeHead(200, { 'Content-Type': 'application/json' });
+                                            res.end(JSON.stringify({
+                                                success: true,
+                                                next: 'done',
+                                            }));
+                                        })
+                                        .catch(function (err) {
+                                            console.error(err);
+                                            front.returnInternalError(res);
+                                        });
+                                } else {
+                                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                                    res.end(JSON.stringify({
+                                        success: false
+                                    }));
+                                }
+                            })
+                            .catch(function (err) {
+                                console.error(err);
+                                front.returnInternalError(res);
+                            });
+                    }
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    front.returnInternalError(res);
                 });
             break;
 
