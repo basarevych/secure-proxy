@@ -4,46 +4,58 @@ var fs          = require('fs'),
     sqlite3     = require('sqlite3'),
     q           = require('q'),
     bcrypt      = require('bcrypt'),
-    speakeasy   = require('speakeasy'),
-    config      = require('../config.js');
+    speakeasy   = require('speakeasy');
 
-var dbFile = __dirname + "/../data/secure-proxy.db";
-if (!fs.existsSync(dbFile))
-    fs.closeSync(fs.openSync(dbFile, "w"));
+function Database(serviceLocator) {
+    this.sl = serviceLocator;
+    this.dbFile = __dirname + "/../data/secure-proxy.db";
 
-var db = new sqlite3.Database(dbFile);
-db.serialize(function () {
-    db.run(
-        "CREATE TABLE IF NOT EXISTS users ("
-      + "  id INTEGER PRIMARY KEY ASC NOT NULL,"
-      + "  login VARCHAR(255) NOT NULL,"
-      + "  password VARCHAR(255) NOT NULL,"
-      + "  otp_key TEXT NOT NULL,"
-      + "  CONSTRAINT user_login_unique UNIQUE (login)"
-      + ")"
-    );
-    db.run(
-        "CREATE TABLE IF NOT EXISTS sessions ("
-      + "  id INTEGER PRIMARY KEY ASC NOT NULL,"
-      + "  user_id INTERGER NOT NULL,"
-      + "  sid VARCHAR(255) NOT NULL,"
-      + "  last TIMESTAMP NOT NULL,"
-      + "  auth_password BOOLEAN NOT NULL,"
-      + "  auth_otp BOOLEAN NOT NULL,"
-      + "  CONSTRAINT session_sid_unique UNIQUE (sid),"
-      + "  CONSTRAINT session_user_fk FOREIGN KEY (user_id)"
-      + "    REFERENCES users(id)"
-      + "    ON DELETE CASCADE ON UPDATE CASCADE"
-      + ")"
-    );
-});
+    this.sl.set('database', this);
+};
 
-module.exports = {};
+Database.prototype.getEngine = function () {
+    if (typeof this.engine != 'undefined')
+        return this.engine;
+    
+    if (!fs.existsSync(this.dbFile))
+        fs.closeSync(fs.openSync(this.dbFile, "w"));
 
-module.exports.userExists = function (login) {
-    var defer = q.defer();
+    var engine = new sqlite3.Database(this.dbFile);
+    engine.serialize(function () {
+        engine.run(
+            "CREATE TABLE IF NOT EXISTS users ("
+          + "  id INTEGER PRIMARY KEY ASC NOT NULL,"
+          + "  login VARCHAR(255) NOT NULL,"
+          + "  password VARCHAR(255) NOT NULL,"
+          + "  otp_key TEXT NOT NULL,"
+          + "  CONSTRAINT user_login_unique UNIQUE (login)"
+          + ")"
+        );
+        engine.run(
+            "CREATE TABLE IF NOT EXISTS sessions ("
+          + "  id INTEGER PRIMARY KEY ASC NOT NULL,"
+          + "  user_id INTERGER NOT NULL,"
+          + "  sid VARCHAR(255) NOT NULL,"
+          + "  last TIMESTAMP NOT NULL,"
+          + "  auth_password BOOLEAN NOT NULL,"
+          + "  auth_otp BOOLEAN NOT NULL,"
+          + "  CONSTRAINT session_sid_unique UNIQUE (sid),"
+          + "  CONSTRAINT session_user_fk FOREIGN KEY (user_id)"
+          + "    REFERENCES users(id)"
+          + "    ON DELETE CASCADE ON UPDATE CASCADE"
+          + ")"
+        );
+    });
 
-    var check = db.prepare(
+    this.engine = engine;
+    return engine;
+};
+
+Database.prototype.userExists = function (login) {
+    var engine = this.getEngine(),
+        defer = q.defer();
+
+    var check = engine.prepare(
         "SELECT COUNT(*) AS count"
       + "   FROM users"
       + "   WHERE login = $login"
@@ -65,10 +77,11 @@ module.exports.userExists = function (login) {
     return defer.promise;
 };
 
-module.exports.selectUser = function (login) {
-    var defer = q.defer();
+Database.prototype.selectUser = function (login) {
+    var engine = this.getEngine(),
+        defer = q.defer();
 
-    var sel = db.prepare(
+    var sel = engine.prepare(
         "SELECT *"
       + "   FROM users"
       + "   WHERE login = $login"
@@ -90,10 +103,11 @@ module.exports.selectUser = function (login) {
     return defer.promise;
 };
 
-module.exports.selectUsers = function () {
-    var defer = q.defer();
+Database.prototype.selectUsers = function () {
+    var engine = this.getEngine(),
+        defer = q.defer();
 
-    var sel = db.prepare(
+    var sel = engine.prepare(
         "SELECT *"
       + "   FROM users"
       + "   ORDER BY id ASC"
@@ -113,15 +127,18 @@ module.exports.selectUsers = function () {
     return defer.promise;
 };
 
-module.exports.createUser = function (login, password) {
-    var defer = q.defer();
+Database.prototype.createUser = function (login, password) {
+    var me = this,
+        engine = this.getEngine(),
+        defer = q.defer(),
+        config = this.sl.get('config');
 
     var key = speakeasy.generate_key({
         length: 20,
         name: config['namespace'],
     });
 
-    var ins = db.prepare(
+    var ins = engine.prepare(
         "INSERT INTO"
       + "   users(login, password, otp_key)"
       + "   VALUES($login, $password, $otp_key)"
@@ -138,7 +155,7 @@ module.exports.createUser = function (login, password) {
                 return;
             }
 
-            module.exports.setUserPassword(login, password)
+            me.setUserPassword(login, password)
                 .then(function (data) {
                     defer.resolve(data);
                 })
@@ -152,10 +169,11 @@ module.exports.createUser = function (login, password) {
     return defer.promise;
 };
 
-module.exports.deleteUser = function (login) {
-    var defer = q.defer();
+Database.prototype.deleteUser = function (login) {
+    var engine = this.getEngine(),
+        defer = q.defer();
 
-    var del = db.prepare(
+    var del = engine.prepare(
         "DELETE FROM users"
       + "   WHERE login = $login"
     );
@@ -175,8 +193,9 @@ module.exports.deleteUser = function (login) {
     return defer.promise;
 };
 
-module.exports.setUserPassword = function (login, password) {
-    var defer = q.defer();
+Database.prototype.setUserPassword = function (login, password) {
+    var engine = this.getEngine(),
+        defer = q.defer();
 
     bcrypt.genSalt(10, function (err, salt) {
         if (err) {
@@ -190,7 +209,7 @@ module.exports.setUserPassword = function (login, password) {
                 return;
             }
 
-            var upd = db.prepare(
+            var upd = engine.prepare(
                 "UPDATE users"
               + "   SET password = $password"
               + "   WHERE login = $login"
@@ -214,10 +233,11 @@ module.exports.setUserPassword = function (login, password) {
     return defer.promise;
 };
 
-module.exports.checkUserPassword = function (login, password) {
-    var defer = q.defer();
+Database.prototype.checkUserPassword = function (login, password) {
+    var engine = this.getEngine(),
+        defer = q.defer();
 
-    module.exports.selectUser(login)
+    this.selectUser(login)
         .then(function (user) {
             if (typeof user == 'undefined') {
                 defer.resolve(false);
@@ -240,10 +260,11 @@ module.exports.checkUserPassword = function (login, password) {
     return defer.promise;
 };
 
-module.exports.checkUserOtp = function (login, otp) {
-    var defer = q.defer();
+Database.prototype.checkUserOtp = function (login, otp) {
+    var engine = this.getEngine(),
+        defer = q.defer();
 
-    module.exports.selectUser(login)
+    this.selectUser(login)
         .then(function (user) {
             if (typeof user == 'undefined') {
                 defer.resolve(false);
@@ -260,10 +281,11 @@ module.exports.checkUserOtp = function (login, otp) {
     return defer.promise;
 };
 
-module.exports.sessionExists = function (sid) {
-    var defer = q.defer();
+Database.prototype.sessionExists = function (sid) {
+    var engine = this.getEngine(),
+        defer = q.defer();
 
-    var check = db.prepare(
+    var check = engine.prepare(
         "SELECT COUNT(*) AS count"
       + "   FROM sessions"
       + "   WHERE sid = $sid"
@@ -285,10 +307,11 @@ module.exports.sessionExists = function (sid) {
     return defer.promise;
 };
 
-module.exports.selectSession = function (sid) {
-    var defer = q.defer();
+Database.prototype.selectSession = function (sid) {
+    var engine = this.getEngine(),
+        defer = q.defer();
 
-    var sel = db.prepare(
+    var sel = engine.prepare(
         "SELECT s.id, s.user_id, u.login, s.sid, s.last, s.auth_password, s.auth_otp"
       + "   FROM sessions s"
       + "   LEFT JOIN users u"
@@ -312,10 +335,11 @@ module.exports.selectSession = function (sid) {
     return defer.promise;
 };
 
-module.exports.selectSessions = function () {
-    var defer = q.defer();
+Database.prototype.selectSessions = function () {
+    var engine = this.getEngine(),
+        defer = q.defer();
 
-    var sel = db.prepare(
+    var sel = engine.prepare(
         "SELECT s.id, s.user_id, u.login, s.sid, s.last, s.auth_password, s.auth_otp"
       + "   FROM sessions s"
       + "   LEFT JOIN users u"
@@ -337,13 +361,14 @@ module.exports.selectSessions = function () {
     return defer.promise;
 };
 
-module.exports.createSession = function (login, sid) {
-    var defer = q.defer(),
+Database.prototype.createSession = function (login, sid) {
+    var engine = this.getEngine(),
+        defer = q.defer(),
         now = new Date().getTime();
 
-    module.exports.selectUser(login)
+    this.selectUser(login)
         .then(function (user) {
-            var ins = db.prepare(
+            var ins = engine.prepare(
                 "INSERT INTO"
               + "   sessions(user_id, sid, last, auth_password, auth_otp)"
               + "   VALUES($user_id, $sid, $last, $auth_password, $auth_otp)"
@@ -374,10 +399,11 @@ module.exports.createSession = function (login, sid) {
     return defer.promise;
 };
 
-module.exports.deleteSession = function (sid) {
-    var defer = q.defer();
+Database.prototype.deleteSession = function (sid) {
+    var engine = this.getEngine(),
+        defer = q.defer();
 
-    var del = db.prepare(
+    var del = engine.prepare(
         "DELETE FROM sessions"
       + "   WHERE sid = $sid"
     );
@@ -397,11 +423,12 @@ module.exports.deleteSession = function (sid) {
     return defer.promise;
 };
 
-module.exports.refreshSession = function (sid) {
-    var defer = q.defer(),
+Database.prototype.refreshSession = function (sid) {
+    var engine = this.getEngine(),
+        defer = q.defer(),
         now = new Date().getTime();
 
-    var upd = db.prepare(
+    var upd = engine.prepare(
         "UPDATE sessions"
       + "   SET last = $last"
       + "   WHERE sid = $sid"
@@ -423,10 +450,11 @@ module.exports.refreshSession = function (sid) {
     return defer.promise;
 };
 
-module.exports.setSessionPassword = function (sid, password) {
-    var defer = q.defer();
+Database.prototype.setSessionPassword = function (sid, password) {
+    var engine = this.getEngine(),
+        defer = q.defer();
 
-    var upd = db.prepare(
+    var upd = engine.prepare(
         "UPDATE sessions"
       + "   SET auth_password = $auth_password"
       + "   WHERE sid = $sid"
@@ -448,10 +476,11 @@ module.exports.setSessionPassword = function (sid, password) {
     return defer.promise;
 };
 
-module.exports.setSessionOtp = function (sid, otp) {
-    var defer = q.defer();
+Database.prototype.setSessionOtp = function (sid, otp) {
+    var engine = this.getEngine(),
+        defer = q.defer();
 
-    var upd = db.prepare(
+    var upd = engine.prepare(
         "UPDATE sessions"
       + "   SET auth_otp = $auth_otp"
       + "   WHERE sid = $sid"
@@ -472,3 +501,5 @@ module.exports.setSessionOtp = function (sid, otp) {
 
     return defer.promise;
 };
+
+module.exports = Database;

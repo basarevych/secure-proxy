@@ -14,9 +14,13 @@ function getRealPath(filename) {
     return path;
 }
 
-module.exports = {};
+function Front(serviceLocator) {
+    this.sl = serviceLocator;
 
-module.exports.returnInternalError = function (res) {
+    this.sl.set('front', this);
+}
+
+Front.prototype.returnInternalError = function (res) {
     res.writeHead(500, { 'Content-Type': 'text/html' });
     res.end(
         '<html><body>'
@@ -26,7 +30,7 @@ module.exports.returnInternalError = function (res) {
     );
 };
 
-module.exports.returnNotFound = function (res) {
+Front.prototype.returnNotFound = function (res) {
     res.writeHead(404, { 'Content-Type': 'text/html' });
     res.end(
         '<html><body>'
@@ -36,7 +40,7 @@ module.exports.returnNotFound = function (res) {
     );
 };
 
-module.exports.returnBadRequest = function (res) {
+Front.prototype.returnBadRequest = function (res) {
     res.writeHead(400, { 'Content-Type': 'text/html' });
     res.end(
         '<html><body>'
@@ -46,10 +50,12 @@ module.exports.returnBadRequest = function (res) {
     );
 };
 
-module.exports.returnFile = function (filename, res) {
+Front.prototype.returnFile = function (filename, res) {
+    var me = this;
+
     var realPath = getRealPath(filename);
     if (realPath === false)
-        return module.exports.returnNotFound(res);
+        return this.returnNotFound(res);
 
     var type = 'application/octet-stream';
     switch (path.extname(filename)) {
@@ -63,13 +69,13 @@ module.exports.returnFile = function (filename, res) {
 
     fs.readFile(realPath, function (err, data) {
         if (err)
-            return return500(res);
+            return me.return500(res);
 
         res.end(data);
     });
 };
 
-module.exports.parseCookies = function (req) {
+Front.prototype.parseCookies = function (req) {
     var list = {},
         rc = req.headers.cookie;
 
@@ -80,3 +86,5 @@ module.exports.parseCookies = function (req) {
 
     return list;
 };
+
+module.exports = Front;

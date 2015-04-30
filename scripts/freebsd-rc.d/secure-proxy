@@ -3,6 +3,17 @@
 # PROVIDE: secure_proxy
 # REQUIRE: LOGIN cleanvar
 
+#
+# Add the following to /etc/rc.conf to enable secure-proxy:
+#
+# secure_proxy_enable (bool):   Set to "NO" by default.
+#                               Set it to "YES" to enable secure-proxy
+# secure_proxy_path (str):      Set to "/usr/local/secure-proxy" by default.
+#                               Set it the installation path
+# secure_proxy_options (str):   Set to "" by default
+#                               Secure proxy options, like "start -h 1.2.3.4:80"
+#
+
 . /etc/rc.subr
 
 : ${secure_proxy_enable="NO"}
