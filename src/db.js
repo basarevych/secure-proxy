@@ -289,9 +289,11 @@ module.exports.selectSession = function (sid) {
     var defer = q.defer();
 
     var sel = db.prepare(
-        "SELECT *"
-      + "   FROM sessions"
-      + "   WHERE sid = $sid"
+        "SELECT s.id, s.user_id, u.login, s.sid, s.auth_password, s.auth_otp"
+      + "   FROM sessions s"
+      + "   LEFT JOIN users u"
+      + "       ON s.user_id = u.id"
+      + "   WHERE s.sid = $sid"
     );
     sel.get(
         {
@@ -314,7 +316,7 @@ module.exports.selectSessions = function () {
     var defer = q.defer();
 
     var sel = db.prepare(
-        "SELECT s.id, u.login, s.sid, s.auth_password, s.auth_otp"
+        "SELECT s.id, s.user_id, u.login, s.sid, s.auth_password, s.auth_otp"
       + "   FROM sessions s"
       + "   LEFT JOIN users u"
       + "       ON s.user_id = u.id"

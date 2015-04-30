@@ -116,15 +116,14 @@ module.exports.parse = function (sid, command, req, res) {
         case 'otp':
             var query = url.parse(req.url, true),
                 action = query.query['action'],
-                login = query.query['login'],
                 otp = query.query['otp'];
 
-            if (typeof sid == 'undefined' || typeof action == 'undefined' || typeof login == 'undefined')
+            if (typeof sid == 'undefined' || typeof action == 'undefined')
                 return front.returnBadRequest(res);
 
-            q.all([ db.selectUser(login), db.selectSession(sid) ])
-                .then(function (user, session) {
-                    if (!user || !session) {
+            db.selectSession(sid)
+                .then(function (session) {
+                    if (!session || !session.auth_password) {
                         res.writeHead(200, { 'Content-Type': 'application/json' });
                         res.end(JSON.stringify({
                             success: false,
@@ -134,14 +133,21 @@ module.exports.parse = function (sid, command, req, res) {
                     }
 
                     if (action == 'get') {
-                        res.writeHead(200, { 'Content-Type': 'application/json' });
-                        res.end(JSON.stringify({
-                            qr_code: 'otpauth://totp/'
-                                + encodeURIComponent(config['otp']['name'])
-                                + '?secret=' + user['otp_key'],
-                        }));
+                        db.selectUser(session['login'])
+                            .then(function (user) {
+                                res.writeHead(200, { 'Content-Type': 'application/json' });
+                                res.end(JSON.stringify({
+                                    qr_code: 'otpauth://totp/'
+                                        + encodeURIComponent(config['otp']['name'])
+                                        + '?secret=' + user['otp_key'],
+                                }));
+                            })
+                            .catch(function (err) {
+                                console.error(err);
+                                front.returnInternalError(res);
+                            });
                     } else if (action = 'check') {
-                        db.checkUserOtp(sid, otp)
+                        db.checkUserOtp(session['login'], otp)
                             .then(function (correct) {
                                 if (correct) {
                                     db.setSessionOtp(sid, true)
