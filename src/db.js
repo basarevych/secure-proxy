@@ -18,6 +18,7 @@ db.serialize(function () {
       + "  id INTEGER PRIMARY KEY ASC NOT NULL,"
       + "  login VARCHAR(255) NOT NULL,"
       + "  password VARCHAR(255) NOT NULL,"
+      + "  otp_key TEXT NOT NULL,"
       + "  ldap BOOLEAN NOT NULL,"
       + "  CONSTRAINT user_login_unique UNIQUE (login)"
       + ")"
@@ -28,7 +29,6 @@ db.serialize(function () {
       + "  user_id INTERGER NOT NULL,"
       + "  sid VARCHAR(255) NOT NULL,"
       + "  last TIMESTAMP NOT NULL,"
-      + "  otp_key TEXT NOT NULL,"
       + "  auth_password BOOLEAN NOT NULL,"
       + "  auth_otp BOOLEAN NOT NULL,"
       + "  CONSTRAINT session_sid_unique UNIQUE (sid),"
@@ -91,18 +91,47 @@ module.exports.selectUser = function (login) {
     return defer.promise;
 };
 
+module.exports.selectUsers = function () {
+    var defer = q.defer();
+
+    var sel = db.prepare(
+        "SELECT *"
+      + "   FROM users"
+      + "   ORDER BY id DESC"
+    );
+    sel.all(
+        { },
+        function (err, rows) {
+            if (err) {
+                defer.reject(err);
+                return;
+            }
+            defer.resolve(rows);
+        }
+    );
+    sel.finalize();
+
+    return defer.promise;
+};
+
 module.exports.createUser = function (login, password, ldap) {
     var defer = q.defer();
 
+    var key = speakeasy.generate_key({
+        length: 20,
+        name: config['namespace'],
+    });
+
     var ins = db.prepare(
         "INSERT INTO"
-      + "   users(login, password, ldap)"
-      + "   VALUES($login, $password, $ldap)"
+      + "   users(login, password, otp_key, ldap)"
+      + "   VALUES($login, $password, $otp_key, $ldap)"
     );
     ins.run(
         {
             $login: login,
             $password: "* NOT SET *",
+            $otp_key: key.base32,
             $ldap: ldap,
         },
         function (err) {
@@ -213,6 +242,26 @@ module.exports.checkUserPassword = function (login, password) {
     return defer.promise;
 };
 
+module.exports.checkUserOtp = function (login, otp) {
+    var defer = q.defer();
+
+    module.exports.selectUser(login)
+        .then(function (user) {
+            if (typeof user == 'undefined') {
+                defer.resolve(false);
+                return;
+            }
+
+            var correct = speakeasy.time({key: user['otp_key'], encoding: 'base32'});
+            defer.resolve(correct == otp);
+        })
+        .catch(function (err) {
+            defer.reject(err);
+        });
+
+    return defer.promise;
+};
+
 module.exports.setUserLdap = function (login, ldap) {
     var defer = q.defer();
 
@@ -288,27 +337,47 @@ module.exports.selectSession = function (sid) {
     return defer.promise;
 };
 
+module.exports.selectSessions = function () {
+    var defer = q.defer();
+
+    var sel = db.prepare(
+        "SELECT s.id, u.login, s.sid, s.auth_password, s.auth_otp"
+      + "   FROM sessions s"
+      + "   LEFT JOIN users u"
+      + "       ON s.user_id = u.id"
+      + "   ORDER BY s.id DESC"
+    );
+    sel.all(
+        { },
+        function (err, rows) {
+            if (err) {
+                defer.reject(err);
+                return;
+            }
+            defer.resolve(rows);
+        }
+    );
+    sel.finalize();
+
+    return defer.promise;
+};
+
 module.exports.createSession = function (login, sid) {
     var defer = q.defer(),
         now = new Date().getTime();
 
     module.exports.selectUser(login)
         .then(function (user) {
-            var key = speakeasy.generate_key({
-                length: 20,
-                name: config['namespace'],
-            });
             var ins = db.prepare(
                 "INSERT INTO"
-              + "   sessions(user_id, sid, last, otp_key, auth_password, auth_otp)"
-              + "   VALUES($user_id, $sid, $last, $otp_key, $auth_password, $auth_otp)"
+              + "   sessions(user_id, sid, last, auth_password, auth_otp)"
+              + "   VALUES($user_id, $sid, $last, $auth_password, $auth_otp)"
             );
             ins.run(
                 {
                     $user_id: user['id'],
                     $sid: sid,
                     $last: now,
-                    $otp_key: key.base32,
                     $auth_password: false,
                     $auth_otp: false,
                 },
@@ -425,26 +494,6 @@ module.exports.setSessionOtp = function (sid, otp) {
         }
     );
     upd.finalize();
-
-    return defer.promise;
-};
-
-module.exports.checkSessionOtp = function (sid, otp) {
-    var defer = q.defer();
-
-    module.exports.selectSession(sid)
-        .then(function (session) {
-            if (typeof session == 'undefined') {
-                defer.resolve(false);
-                return;
-            }
-
-            var correct = speakeasy.time({key: session['otp_key'], encoding: 'base32'});
-            defer.resolve(correct == otp);
-        })
-        .catch(function (err) {
-            defer.reject(err);
-        });
 
     return defer.promise;
 };

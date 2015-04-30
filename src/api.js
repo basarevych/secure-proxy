@@ -88,7 +88,7 @@ module.exports.parse = function (sid, command, req, res) {
                                                 res.writeHead(200, { 'Content-Type': 'application/json' });
                                                 res.end(JSON.stringify({
                                                     success: true,
-                                                    next: config['enable_otp'] ? 'otp' : 'done',
+                                                    next: config['otp']['enable'] ? 'otp' : 'done',
                                                 }));
                                             })
                                             .catch(function (err) {
@@ -115,15 +115,16 @@ module.exports.parse = function (sid, command, req, res) {
 
         case 'otp':
             var query = url.parse(req.url, true),
-                action = query.query['action'];
-                result = query.query['result'];
+                action = query.query['action'],
+                login = query.query['login'],
+                otp = query.query['otp'];
 
-            if (typeof sid == 'undefined' || typeof action == 'undefined')
+            if (typeof sid == 'undefined' || typeof action == 'undefined' || typeof login == 'undefined')
                 return front.returnBadRequest(res);
 
-            db.selectSession(sid)
-                .then(function (session) {
-                    if (!session) {
+            q.all([ db.selectUser(login), db.selectSession(sid) ])
+                .then(function (user, session) {
+                    if (!user || !session) {
                         res.writeHead(200, { 'Content-Type': 'application/json' });
                         res.end(JSON.stringify({
                             success: false,
@@ -135,10 +136,10 @@ module.exports.parse = function (sid, command, req, res) {
                     if (action == 'get') {
                         res.writeHead(200, { 'Content-Type': 'application/json' });
                         res.end(JSON.stringify({
-                            qr_code: 'otpauth://totp/' + config['namespace'] + '?secret=' + session['otp_key'],
+                            qr_code: 'otpauth://totp/' + config['otp']['name'] + '?secret=' + user['otp_key'],
                         }));
                     } else if (action = 'check') {
-                        db.checkSessionOtp(sid, result)
+                        db.checkUserOtp(sid, otp)
                             .then(function (correct) {
                                 if (correct) {
                                     db.setSessionOtp(sid, true)

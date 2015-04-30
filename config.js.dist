@@ -1,12 +1,15 @@
 module.exports = {
     target: 'http://127.0.0.1:80',  // The target server
 
-    enable_otp: true,               // Google Authenticator
-
     namespace: 'secureproxy',       // Alphanumeric
 
     user: 'www',                    // Drop privileges to these
     group: 'www',
+
+    otp: {                          // One Time Password (OTP)
+        enable: true,
+        name: 'Secure Proxy',       // Google Authenticator account name
+    },                              // (will be visible to user)
 
     ssl: {                          // Ignored if HTTPS is not enabled
         key: '/etc/certs/server.unencrypted.key',
