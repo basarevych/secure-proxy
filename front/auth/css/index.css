@@ -54,6 +54,6 @@ body {
 .localization .language {
     margin-left: 15px;
 }
-#login-messages {
+#login-messages, #otp-messages {
     text-align: center;
 }

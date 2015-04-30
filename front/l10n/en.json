@@ -4,7 +4,10 @@
         "USERNAME_LABEL": "Login",
         "PASSWORD_LABEL": "Password",
         "SUBMIT_LABEL": "Sign in",
+        "QR_LABEL": "Please scan with Google Authenticator",
+        "OTP_LABEL": "Code",
         "FIELD_EMPTY": "Value is required and can't be empty",
-        "INVALID_LOGIN": "Invalid login or password"
+        "INVALID_LOGIN": "Invalid login or password",
+        "INVALID_OTP": "Invalid code"
     }
 }

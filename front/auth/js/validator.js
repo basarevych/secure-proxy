@@ -12,6 +12,10 @@ function validateFormField(element) {
             if (value.trim() == '')
                 errors.push('FIELD_EMPTY');
             break;
+        case 'otp':
+            if (value.trim() == '')
+                errors.push('FIELD_EMPTY');
+            break;
     }
 
     var gl = window['globalize'],

@@ -94,7 +94,7 @@ function requestListener(req, res) {
         .then(function (session) {
             var isAuthenticated = false;
             if (session) {
-                if (config['enable_otp'])
+                if (config['otp']['enable'])
                     isAuthenticated = session.auth_password && session.auth_otp;
                 else
                     isAuthenticated = session.auth_password;
@@ -140,7 +140,10 @@ function requestListener(req, res) {
 
                 return;
             } else if (isAuthenticated) {
-                proxy.web(req, res);
+                db.refreshSession(sid)
+                    .then(function () {
+                        proxy.web(req, res);
+                    });
             } else {
                 front.returnFile('auth/index.html', res);
             }

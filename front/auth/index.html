@@ -41,6 +41,7 @@
                     </div>
                     <form class="form-horizontal" onsubmit="return false">
                         <div id="login-messages"></div>
+
                         <div class="form-group">
                             <label id="login-label" class="col-sm-4 control-label" for="login"></label>
                             <div class="col-sm-8">
@@ -59,7 +60,7 @@
                             <div class="col-sm-8">
                                 <input class="form-control" type="password" name="password" id="password"
                                        data-on-blur="validateFormField($('input[name=password]'))"
-                                       data-on-enter="submitLoginForm()">
+                                       data-on-enter="submitPassword()">
                                 <div class="help-block">
                                     <ul class="list-unstyled icon-list error-list">
                                     </ul>
@@ -67,11 +68,39 @@
                             </div>
                         </div>
 
-<div id="qr-code"></div>
-
                         <div class="form-group">
                             <div class="col-sm-offset-4 col-sm-8">
-                                <button id="submit-button" class="btn btn-default" type="submit" onclick="submitLoginForm()"></button>
+                                <button id="submit-password-button" class="btn btn-default" type="submit" onclick="submitPassword()"></button>
+                            </div>
+                        </div>
+
+                        <div id="otp-section" style="display: none">
+                            <div id="otp-messages"></div>
+
+                            <div class="form-group">
+                                <label id="qr-label" class="col-sm-4 control-label"></label>
+                                <div class="col-sm-8">
+                                    <div id="qr-code"></div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label id="otp-label" class="col-sm-4 control-label" for="otp"></label>
+                                <div class="col-sm-8">
+                                    <input class="form-control" type="text" name="otp" id="otp"
+                                           data-on-blur="validateFormField($('input[name=otp]'))"
+                                           data-on-enter="submitOtp()">
+                                    <div class="help-block">
+                                        <ul class="list-unstyled icon-list error-list">
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <div class="col-sm-offset-4 col-sm-8">
+                                    <button id="submit-otp-button" class="btn btn-default" type="submit" onclick="submitOtp()"></button>
+                                </div>
                             </div>
                         </div>
                     </form>
@@ -115,13 +144,16 @@
                 $('#page-title').text(gl.formatMessage('PAGE_TITLE'));
                 $('#login-label').text(gl.formatMessage('USERNAME_LABEL') + ':');
                 $('#password-label').text(gl.formatMessage('PASSWORD_LABEL') + ':');
-                $('#submit-button').text(gl.formatMessage('SUBMIT_LABEL'));
+                $('#submit-password-button').text(gl.formatMessage('SUBMIT_LABEL'));
+                $('#qr-label').text(gl.formatMessage('QR_LABEL'));
+                $('#otp-label').text(gl.formatMessage('OTP_LABEL'));
+                $('#submit-otp-button').text(gl.formatMessage('SUBMIT_LABEL'));
                 $('#login-form .form-group').removeClass('has-error');
                 $('#login-form .help-block ul').empty();
                 $('#login-form').slideDown(function () { $('#login').focus() });
             }
 
-            function submitLoginForm() {
+            function submitPassword() {
                 var login = validateFormField($('#login')),
                     password = validateFormField($('#password'));
 
@@ -163,11 +195,18 @@
                                             return;
                                         }
                                         $('#qr-code').qrcode({
-                                            "width": 100,
-                                            "height": 100,
-                                            "color": "#3a3",
+                                            "width": 80,
+                                            "height": 80,
                                             "text": data.qr_code,
                                         });
+                                        $('#login')
+                                            .addClass('disabled')
+                                            .prop('disabled', true);
+                                        $('#password')
+                                            .addClass('disabled')
+                                            .prop('disabled', true);
+                                        $('#submit-password-button').hide();
+                                        $('#otp-section').slideDown(function () { $('#otp').focus() });
                                     }
                                 });
                             }
@@ -175,6 +214,42 @@
                             var msg = $('<div></div>');
                             msg.addClass('alert alert-danger')
                                .text(gl.formatMessage('INVALID_LOGIN'))
+                               .appendTo(messages);
+                        }
+                    }
+                });
+            }
+
+            function submitOtp() {
+                var otp = validateFormField($('#otp'));
+
+                if (!otp) {
+                    $('#otp').focus();
+                    return;
+                }
+
+                $.ajax({
+                    url: '/secure-proxy/api/otp',
+                    method: 'GET',
+                    data: {
+                        action: 'check',
+                        otp: $('#otp').val(),
+                    },
+                    success: function (data) {
+                        var messages = $('#otp-messages');
+                        messages.empty();
+
+                        if (data.success) {
+                            $('#login-form').slideUp(function () { window.location.reload(); });
+                            return;
+                        } else {
+                            if (data.next == 'password') {
+                                window.location.reload();
+                                return;
+                            }
+                            var msg = $('<div></div>');
+                            msg.addClass('alert alert-danger')
+                               .text(gl.formatMessage('INVALID_OTP'))
                                .appendTo(messages);
                         }
                     }

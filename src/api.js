@@ -2,6 +2,7 @@
 
 var url         = require('url'),
     locale      = require('locale'),
+    q           = require('q'),
     config      = require('../config.js'),
     front       = require('./front.js'),
     db          = require('./db.js');
@@ -15,7 +16,7 @@ module.exports.parse = function (sid, command, req, res) {
             var query = url.parse(req.url, true),
                 set = query.query['set'],
                 cookies = front.parseCookies(req),
-                cookie = cookies[config['namspace'] + 'locale'],
+                cookie = cookies[config['namespace'] + 'locale'],
                 supported = [ 'en', 'ru' ],
                 locales = new locale.Locales(req.headers["accept-language"])
 
@@ -75,31 +76,35 @@ module.exports.parse = function (sid, command, req, res) {
                     if (match) {
                         db.selectSession(sid)
                             .then(function (session) {
-                                var promise = null;
-                                if (typeof session == 'undefined')
-                                    promise = db.createSession(login, sid);
-                                else
-                                    promise = db.refreshSession(sid);
+                                var defer = q.defer();
 
-                                promise
+                                defer.promise
+                                    .then(function () { return db.createSession(login, sid) })
+                                    .then(function () { return db.setSessionPassword(sid, true) })
                                     .then(function () {
-                                        db.setSessionPassword(sid, true)
-                                            .then(function () {
-                                                res.writeHead(200, { 'Content-Type': 'application/json' });
-                                                res.end(JSON.stringify({
-                                                    success: true,
-                                                    next: config['otp']['enable'] ? 'otp' : 'done',
-                                                }));
-                                            })
-                                            .catch(function (err) {
-                                                console.error(err);
-                                                front.returnInternalError(res);
-                                            });
+                                        res.writeHead(200, { 'Content-Type': 'application/json' });
+                                        res.end(JSON.stringify({
+                                            success: true,
+                                            next: config['otp']['enable'] ? 'otp' : 'done',
+                                        }));
                                     })
                                     .catch(function (err) {
                                         console.error(err);
                                         front.returnInternalError(res);
                                     });
+
+                                if (typeof session == 'undefined') {
+                                    defer.resolve();
+                                } else {
+                                    db.deleteSession(sid)
+                                        .then(function () {
+                                            defer.resolve();
+                                        })
+                                        .catch(function (err) {
+                                            console.error(err);
+                                            front.returnInternalError(res);
+                                        });
+                                }
                             })
                             .catch(function (err) {
                                 console.error(err);
@@ -173,6 +178,8 @@ module.exports.parse = function (sid, command, req, res) {
                                 console.error(err);
                                 front.returnInternalError(res);
                             });
+                    } else {
+                        return front.returnBadRequest(res);
                     }
                 })
                 .catch(function (err) {

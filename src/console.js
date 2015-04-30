@@ -94,11 +94,12 @@ switch (process.argv[2]) {
         db.selectSessions()
             .then(function (sessions) {
                 for (var i = 0; i < sessions.length; i++) {
+                    var date = new Date(sessions[i]['last']);
                     rl.write(
                         "\nID:\t\t\t" + sessions[i]['id']
                         + "\nLogin:\t\t\t" + sessions[i]['login']
                         + "\nSID\t\t\t" + sessions[i]['sid']
-                        + "\nLast seen\t\t" + sessions[i]['last']
+                        + "\nLast seen\t\t" + date.toString()
                         + "\nProvided password:\t" + (sessions[i]['auth_password'] ? 'true' : 'false')
                         + "\nProvided OTP\t\t" + (sessions[i]['auth_otp'] ? 'true' : 'false')
                         + "\n"
