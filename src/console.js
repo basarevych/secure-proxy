@@ -91,17 +91,16 @@ switch (process.argv[2]) {
 
     case 'list-sessions':
         rl.write("==> Session list\n");
-        rl.write("\nID:Login:SID:Last:Password authenticated:OTP authenticated\n\n");
         db.selectSessions()
             .then(function (sessions) {
                 for (var i = 0; i < sessions.length; i++) {
                     rl.write(
-                        sessions[i]['id']
-                        + ':' + sessions[i]['login']
-                        + ':' + sessions[i]['sid']
-                        + ':' + sessions[i]['last']
-                        + ':' + (sessions[i]['auth_password'] ? '1' : '0')
-                        + ':' + (sessions[i]['auth_otp'] ? '1' : '0')
+                        "\nID:\t\t\t" + sessions[i]['id']
+                        + "\nLogin:\t\t\t" + sessions[i]['login']
+                        + "\nSID\t\t\t" + sessions[i]['sid']
+                        + "\nLast seen\t\t" + sessions[i]['last']
+                        + "\nProvided password:\t" + (sessions[i]['auth_password'] ? 'true' : 'false')
+                        + "\nProvided OTP\t\t" + (sessions[i]['auth_otp'] ? 'true' : 'false')
                         + "\n"
                     );
                 }
