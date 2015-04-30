@@ -257,6 +257,17 @@
             }
 
             $(document).ready(function () {
+                if ($('#login').prop('disabled')) {
+                    $('#login')
+                        .removeClass('disabled')
+                        .prop('disabled', false);
+                    $('#password')
+                        .removeClass('disabled')
+                        .prop('disabled', false);
+                    $('#submit-password-button').show();
+                    $('#otp-section').hide();
+                }
+
                 $.getJSON('/secure-proxy/api/locale', function (data) {
                     loadLocale(data.locale);
                 });
