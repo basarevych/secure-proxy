@@ -19,7 +19,6 @@ db.serialize(function () {
       + "  login VARCHAR(255) NOT NULL,"
       + "  password VARCHAR(255) NOT NULL,"
       + "  otp_key TEXT NOT NULL,"
-      + "  ldap BOOLEAN NOT NULL,"
       + "  CONSTRAINT user_login_unique UNIQUE (login)"
       + ")"
     );
@@ -97,7 +96,7 @@ module.exports.selectUsers = function () {
     var sel = db.prepare(
         "SELECT *"
       + "   FROM users"
-      + "   ORDER BY id DESC"
+      + "   ORDER BY id ASC"
     );
     sel.all(
         { },
@@ -114,7 +113,7 @@ module.exports.selectUsers = function () {
     return defer.promise;
 };
 
-module.exports.createUser = function (login, password, ldap) {
+module.exports.createUser = function (login, password) {
     var defer = q.defer();
 
     var key = speakeasy.generate_key({
@@ -124,15 +123,14 @@ module.exports.createUser = function (login, password, ldap) {
 
     var ins = db.prepare(
         "INSERT INTO"
-      + "   users(login, password, otp_key, ldap)"
-      + "   VALUES($login, $password, $otp_key, $ldap)"
+      + "   users(login, password, otp_key)"
+      + "   VALUES($login, $password, $otp_key)"
     );
     ins.run(
         {
             $login: login,
             $password: "* NOT SET *",
             $otp_key: key.base32,
-            $ldap: ldap,
         },
         function (err) {
             if (err) {
@@ -262,31 +260,6 @@ module.exports.checkUserOtp = function (login, otp) {
     return defer.promise;
 };
 
-module.exports.setUserLdap = function (login, ldap) {
-    var defer = q.defer();
-
-    var upd = db.prepare(
-        "UPDATE users"
-      + "   SET ldap = $ldap"
-      + "   WHERE login = $login"
-    );
-    upd.run(
-        {
-            $ldap: ldap,
-            $login: login
-        },
-        function (err) {
-            if (err)
-                defer.reject(err);
-            else
-                defer.resolve();
-        }
-    );
-    upd.finalize();
-
-    return defer.promise;
-};
-
 module.exports.sessionExists = function (sid) {
     var defer = q.defer();
 
@@ -345,7 +318,7 @@ module.exports.selectSessions = function () {
       + "   FROM sessions s"
       + "   LEFT JOIN users u"
       + "       ON s.user_id = u.id"
-      + "   ORDER BY s.id DESC"
+      + "   ORDER BY s.id ASC"
     );
     sel.all(
         { },

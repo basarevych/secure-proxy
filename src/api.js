@@ -136,7 +136,9 @@ module.exports.parse = function (sid, command, req, res) {
                     if (action == 'get') {
                         res.writeHead(200, { 'Content-Type': 'application/json' });
                         res.end(JSON.stringify({
-                            qr_code: 'otpauth://totp/' + config['otp']['name'] + '?secret=' + user['otp_key'],
+                            qr_code: 'otpauth://totp/'
+                                + encodeURIComponent(config['otp']['name'])
+                                + '?secret=' + user['otp_key'],
                         }));
                     } else if (action = 'check') {
                         db.checkUserOtp(sid, otp)
