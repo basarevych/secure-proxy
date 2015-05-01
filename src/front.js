@@ -1,7 +1,10 @@
 'use strict'
 
-var path        = require('path'),
-    fs          = require('fs');
+var fs          = require('fs'),
+    q           = require('q'),
+    crypto      = require('crypto'),
+    path        = require('path'),
+    url         = require('url');
 
 function getRealPath(filename) {
     if (filename.indexOf('..') != -1)
@@ -73,6 +76,91 @@ Front.prototype.returnFile = function (filename, res) {
 
         res.end(data);
     });
+};
+
+Front.prototype.requestListener = function (req, res) {
+    var me = this,
+        db = this.sl.get('database'),
+        api = this.sl.get('api'),
+        proxy = this.sl.get('proxy'),
+        config = this.sl.get('config'),
+        cookies = this.parseCookies(req),
+        sid = cookies[config['namespace'] + 'sid'],
+        query = url.parse(req.url),
+        urlParts = query.pathname.split('/');
+
+    db.selectSession(sid)
+        .then(function (session) {
+            var isAuthenticated = false;
+            if (session) {
+                if (config['otp']['enable'])
+                    isAuthenticated = session.auth_password && session.auth_otp;
+                else
+                    isAuthenticated = session.auth_password;
+            }
+
+            if (urlParts.length >= 2 && urlParts[0] == '' && urlParts[1] == 'secure-proxy') {
+                if (urlParts.length == 2 || urlParts[2] == '') {
+                    return me.returnNotFound(res);
+                } else if (urlParts[2] == 'static') {
+                    urlParts.shift();
+                    urlParts.shift();
+                    urlParts.shift();
+                    return me.returnFile(urlParts.join('/'), res);
+                } else if (urlParts[2] == 'api') {
+                    if (urlParts.length < 4)
+                        return me.returnNotFound(res);
+                    switch (urlParts[3]) {
+                        case 'locale':
+                            return api.locale(sid, req, res);
+                        case 'logout':
+                            return api.logout(sid, req, res);
+                        case 'auth':
+                            return api.auth(sid, req, res);
+                        case 'otp':
+                            return api.otp(sid, req, res);
+                        default:
+                            return me.returnNotFound(res);
+                    }
+                }
+            }
+
+            if (typeof sid == 'undefined') {
+                var defer = q.defer();
+
+                crypto.randomBytes(16, function (ex, buf) {
+                    if (ex)
+                        defer.reject(ex);
+                    else
+                        defer.resolve(buf.toString('hex'));
+                });
+
+                defer.promise
+                    .then(function (random) {
+                        var header = config['namespace'] + 'sid=' + random + '; path=/';
+                        res.setHeader('set-cookie', header);
+                    })
+                    .then(function () {
+                        this.returnFile('auth/index.html', res);
+                    })
+                    .catch(function (err) {
+                        console.error(err);
+                        me.returnInternalError(res);
+                    });
+
+                return;
+            } else if (isAuthenticated) {
+                db.refreshSession(sid)
+                    .then(function () {
+                        proxy.web(req, res);
+                    });
+            } else {
+                me.returnFile('auth/index.html', res);
+            }
+        })
+        .catch(function (err) {
+            console.error(err);
+        });
 };
 
 Front.prototype.parseCookies = function (req) {

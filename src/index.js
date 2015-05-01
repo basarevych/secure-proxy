@@ -1,12 +1,10 @@
 'use strict'
 
 var fs              = require('fs'),
+    q               = require('q'),
     http            = require('http'),
     https           = require('https'),
     httpProxy       = require('http-proxy'),
-    crypto          = require('crypto'),
-    url             = require('url'),
-    q               = require('q'),
     argv            = require('minimist')(process.argv.slice(2)),
     ServiceLocator  = require('./service-locator.js'),
     Database        = require('./database.js'),
@@ -67,6 +65,7 @@ switch (argv['_'][0]) {
             console.error(err);
             front.returnInternalError(res);
         });
+        sl.set('proxy', proxy);
 
         var bindPromises = [];
 
@@ -74,7 +73,7 @@ switch (argv['_'][0]) {
             var httpDefer = q.defer();
             bindPromises.push(httpDefer.promise);
 
-            var httpServer = http.createServer(requestListener);
+            var httpServer = http.createServer(function (req, res) { front.requestListener(req, res); });
             httpServer.listen(httpOption[1], httpOption[0], function () { httpDefer.resolve(); });
         }
 
@@ -87,7 +86,7 @@ switch (argv['_'][0]) {
                     key: fs.readFileSync(config['ssl']['key'], 'utf8'),
                     cert: fs.readFileSync(config['ssl']['cert'], 'utf8')
                 },
-                requestListener
+                function (req, res) { front.requestListener(req, res); }
             );
             httpsServer.listen(httpsOption[1], httpsOption[0], function () { httpsDefer.resolve(); });
         }
@@ -124,83 +123,3 @@ switch (argv['_'][0]) {
         cons.deleteSession();
         break;
 }
-
-function requestListener(req, res) {
-    var cookies = front.parseCookies(req),
-        sid = cookies[config['namespace'] + 'sid'],
-        query = url.parse(req.url),
-        urlParts = query.pathname.split('/');
-
-    db.selectSession(sid)
-        .then(function (session) {
-            var isAuthenticated = false;
-            if (session) {
-                if (config['otp']['enable'])
-                    isAuthenticated = session.auth_password && session.auth_otp;
-                else
-                    isAuthenticated = session.auth_password;
-            }
-
-            if (urlParts.length >= 2 && urlParts[0] == '' && urlParts[1] == 'secure-proxy') {
-                if (urlParts.length == 2 || urlParts[2] == '') {
-                    return front.returnFile(isAuthenticated ? 'app/index.html' : 'auth/index.html', res);
-                } else if (urlParts[2] == 'static') {
-                    urlParts.shift();
-                    urlParts.shift();
-                    urlParts.shift();
-                    return front.returnFile(urlParts.join('/'), res);
-                } else if (urlParts[2] == 'api') {
-                    if (urlParts.length < 4)
-                        return front.returnNotFound(res);
-                    switch (urlParts[3]) {
-                        case 'locale':
-                            return api.locale(sid, req, res);
-                        case 'logout':
-                            return api.logout(sid, req, res);
-                        case 'auth':
-                            return api.auth(sid, req, res);
-                        case 'otp':
-                            return api.otp(sid, req, res);
-                        default:
-                            return front.returnNotFound(res);
-                    }
-                }
-            }
-
-            if (typeof sid == 'undefined') {
-                var defer = q.defer();
-
-                crypto.randomBytes(16, function (ex, buf) {
-                    if (ex)
-                        defer.reject(ex);
-                    else
-                        defer.resolve(buf.toString('hex'));
-                });
-
-                defer.promise
-                    .then(function (random) {
-                        var header = config['namespace'] + 'sid=' + random + '; path=/';
-                        res.setHeader('set-cookie', header);
-                    })
-                    .then(function () {
-                        front.returnFile('auth/index.html', res);
-                    })
-                    .catch(function (err) {
-                        console.error(err);
-                        front.returnInternalError(res);
-                    });
-
-                return;
-            } else if (isAuthenticated) {
-                db.refreshSession(sid)
-                    .then(function () {
-                        proxy.web(req, res);
-                    });
-            } else {
-                front.returnFile('auth/index.html', res);
-            }
-        })
-        .catch(function (err) {
-            console.error(err);
-        });
-};

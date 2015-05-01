@@ -14,14 +14,14 @@ ServiceLocator.prototype.has = function (name) {
 
 ServiceLocator.prototype.set = function (name, service) {
     if (typeof this.services[name] != 'undefined')
-        throw new Error('Service already exists');
+        throw new Error('Service ' + name + ' already exists');
 
     this.services[name] = service;
 };
 
 ServiceLocator.prototype.get = function (name) {
     if (typeof this.services[name] == 'undefined')
-        throw new Error('Service does not exists');
+        throw new Error('Service ' + name + ' does not exists');
 
     return this.services[name];
 };
