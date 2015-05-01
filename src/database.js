@@ -17,8 +17,10 @@ Database.prototype.getEngine = function () {
     if (typeof this.engine != 'undefined')
         return this.engine;
     
-    if (!fs.existsSync(this.dbFile))
-        fs.closeSync(fs.openSync(this.dbFile, "w"));
+    if (this.dbFile != ':memory:') {
+        if (!fs.existsSync(this.dbFile))
+            fs.closeSync(fs.openSync(this.dbFile, "w"));
+    }
 
     var engine = new sqlite3.Database(this.dbFile);
     engine.serialize(function () {
@@ -271,7 +273,7 @@ Database.prototype.checkUserOtp = function (login, otp) {
                 return;
             }
 
-            var correct = speakeasy.time({key: user['otp_key'], encoding: 'base32'});
+            var correct = speakeasy.time({ key: user['otp_key'], encoding: 'base32' });
             defer.resolve(correct == otp);
         })
         .catch(function (err) {
