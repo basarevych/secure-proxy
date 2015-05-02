@@ -1,3 +1,5 @@
+'use strict';
+
 var ServiceLocator  = require('../src/service-locator.js');
 
 module.exports = {

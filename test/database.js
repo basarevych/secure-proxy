@@ -1,3 +1,5 @@
+'use strict';
+
 var speakeasy       = require('speakeasy'),
     ServiceLocator  = require('../src/service-locator.js'),
     Database        = require('../src/database.js');
