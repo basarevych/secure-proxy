@@ -105,6 +105,88 @@ module.exports = {
                 me.cons.updateUser();
             });
     },
+
+    testDeleteUser: function (test) {
+        var me = this;
+
+        var defer = q.defer(), deletedUser;
+        this.db.deleteUser = function (login) {
+            deletedUser = login;
+            defer.resolve();
+            return defer.promise;
+        };
+
+        this.cons.rl = {
+            write: function () {},
+            question: function(text, cb) {
+                cb('login');
+            },
+            close: function () {
+                test.equal(deletedUser, 'login', "Login is wrong");
+                test.done();
+            }
+        };
+
+        this.db.createUser('login', 'password')
+            .then(function () {
+                me.cons.deleteUser();
+            });
+    },
+
+    testListSessions: function (test) {
+        var me = this;
+
+        this.db.createUser('login', 'password')
+            .then(function () { return me.db.createSession('login', 'sid') })
+            .then(function () { return me.db.selectSession('sid') })
+            .then(function (session) {
+                var output = [];
+                me.cons.rl = { 
+                    write: function (line) {
+                        var sublines = line.split("\n");
+                        for (var i = 0; i < sublines.length; i++)
+                            output.push(sublines[i]);
+                    },
+                    close: function () {
+                        test.equal(checkArray(output, /ID:\s+1$/), true, "id is missing");
+                        test.equal(checkArray(output, /Login:\s+login$/), true, "login is missing");
+                        test.equal(checkArray(output, /SID:\s+sid$/), true, "sid is missing");
+                        test.equal(checkArray(output, /password:\s+false$/), true, "password is missing");
+                        test.equal(checkArray(output, /OTP:\s+false$/), true, "otp is missing");
+                        test.done();
+                    }
+                };
+                me.cons.listSessions();
+            });
+    },
+
+    testDeleteSession: function (test) {
+        var me = this;
+
+        var defer = q.defer(), deletedSession;
+        this.db.deleteSession = function (sid) {
+            deletedSession = sid;
+            defer.resolve();
+            return defer.promise;
+        };
+
+        this.cons.rl = {
+            write: function () {},
+            question: function(text, cb) {
+                cb('sid');
+            },
+            close: function () {
+                test.equal(deletedSession, 'sid', "SID is wrong");
+                test.done();
+            }
+        };
+
+        this.db.createUser('login', 'password')
+            .then(function () { return me.db.createSession('login', 'sid') })
+            .then(function () {
+                me.cons.deleteSession('sid');
+            });
+    },
 };
 
 function checkArray(arr, re, value)

@@ -103,8 +103,8 @@ Console.prototype.deleteUser = function () {
 };
 
 Console.prototype.listSessions = function () {
-    var db = this.db,
-        rl = this.rl;
+    var db = this.getDatabase(),
+        rl = this.getReadline();
 
     rl.write("==> Session list\n");
     db.selectSessions()
@@ -114,10 +114,10 @@ Console.prototype.listSessions = function () {
                 rl.write(
                     "\nID:\t\t\t" + sessions[i]['id']
                     + "\nLogin:\t\t\t" + sessions[i]['login']
-                    + "\nSID\t\t\t" + sessions[i]['sid']
-                    + "\nLast seen\t\t" + date.toString()
+                    + "\nSID:\t\t\t" + sessions[i]['sid']
+                    + "\nLast seen:\t\t" + date.toString()
                     + "\nProvided password:\t" + (sessions[i]['auth_password'] ? 'true' : 'false')
-                    + "\nProvided OTP\t\t" + (sessions[i]['auth_otp'] ? 'true' : 'false')
+                    + "\nProvided OTP:\t\t" + (sessions[i]['auth_otp'] ? 'true' : 'false')
                     + "\n"
                 );
             }
@@ -126,8 +126,8 @@ Console.prototype.listSessions = function () {
 };
 
 Console.prototype.deleteSession = function () {
-    var db = this.db,
-        rl = this.rl;
+    var db = this.getDatabase(),
+        rl = this.getReadline();
 
     rl.write("==> Delete session\n");
     rl.question('-> SID? ', function (sid) {
