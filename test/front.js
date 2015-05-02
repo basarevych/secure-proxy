@@ -16,6 +16,9 @@ module.exports = {
 
         this.config = {
             namespace: 'foobar',
+            otp: {
+                enable: true,
+            },
         };
         this.sl.set('config', this.config);
 
@@ -173,4 +176,59 @@ module.exports = {
 
         this.front.requestListener(req, {});
     },
+
+    testApiRequestListener: function (test) {
+        var req = {
+            headers: {
+                cookie: 'foobarsid=sid'
+            },
+            url: '/secure-proxy/api/locale',
+        };
+
+        this.api.locale = function (sid, req2, res2) {
+            test.done();
+        };
+
+        this.front.requestListener(req, {});
+    },
+
+    testGuestProxyRequestListener: function (test) {
+        var req = {
+            headers: {
+                cookie: 'foobarsid=sid'
+            },
+            url: '/random/path',
+        };
+
+        this.front.returnFile = function (filename, res) {
+            test.equal(filename, 'auth/index.html', "Authentication index.html should be returned");
+            test.done();
+        };
+
+        this.front.requestListener(req, {});
+    },
+
+    testUserProxyRequestListener: function (test) {
+        var me = this;
+
+        var req = {
+            headers: {
+                cookie: 'foobarsid=sid'
+            },
+            url: '/random/path',
+        };
+
+        this.proxy.web = function (req, res) {
+            test.done();
+        };
+
+        this.db.createUser('login', 'password')
+            .then(function () { return me.db.createSession('login', 'sid') })
+            .then(function () { return me.db.setSessionPassword('sid', true) })
+            .then(function () { return me.db.setSessionOtp('sid', true) })
+            .then(function () {
+                me.front.requestListener(req, {});
+            });
+    },
+
 };
