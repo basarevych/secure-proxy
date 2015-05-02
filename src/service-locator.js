@@ -9,6 +9,8 @@ function ServiceLocator() {
     this.allowOverride = false;
 }
 
+module.exports = ServiceLocator;
+
 ServiceLocator.prototype.has = function (name) {
     return typeof this.services[name] != 'undefined';
 };
@@ -30,5 +32,3 @@ ServiceLocator.prototype.get = function (name) {
 ServiceLocator.prototype.setAllowOverride = function (allow) {
     this.allowOverride = allow;
 };
-
-module.exports = ServiceLocator;

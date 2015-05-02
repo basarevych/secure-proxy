@@ -4,18 +4,38 @@ var readline = require('readline');
 
 function Console(serviceLocator) {
     this.sl = serviceLocator;
-    this.db = this.sl.get('database');
-    this.rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout,
-    });
 
     this.sl.set('console', this);
 };
 
+module.exports = Console;
+
+Console.prototype.getDatabase = function () {
+    if (typeof this.db != 'undefined')
+        return this.db;
+
+    var db = this.sl.get('database');
+
+    this.db = db;
+    return db;
+};
+
+Console.prototype.getReadline = function () {
+    if (typeof this.rl != 'undefined')
+        return this.rl;
+
+    var rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+    });
+
+    this.rl = rl;
+    return rl;
+};
+
 Console.prototype.listUsers = function () {
-    var db = this.db,
-        rl = this.rl;
+    var db = this.getDatabase(),
+        rl = this.getReadline();
 
     rl.write("==> User list\n");
     db.selectUsers()
@@ -34,8 +54,8 @@ Console.prototype.listUsers = function () {
 };
 
 Console.prototype.updateUser = function () {
-    var db = this.db,
-        rl = this.rl;
+    var db = this.getDatabase(),
+        rl = this.getReadline();
 
     rl.write("==> Update user\n");
     rl.question('-> Username? ', function (username) {
@@ -61,8 +81,8 @@ Console.prototype.updateUser = function () {
 };
 
 Console.prototype.deleteUser = function () {
-    var db = this.db,
-        rl = this.rl;
+    var db = this.getDatabase(),
+        rl = this.getReadline();
 
     rl.write("==> Delete user\n");
     rl.question('-> Username? ', function (username) {
@@ -126,5 +146,3 @@ Console.prototype.deleteSession = function () {
             });
     });
 };
-
-module.exports = Console;

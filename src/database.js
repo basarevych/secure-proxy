@@ -13,6 +13,8 @@ function Database(serviceLocator) {
     this.sl.set('database', this);
 };
 
+module.exports = Database;
+
 Database.prototype.getEngine = function () {
     if (typeof this.engine != 'undefined')
         return this.engine;
@@ -503,5 +505,3 @@ Database.prototype.setSessionOtp = function (sid, otp) {
 
     return defer.promise;
 };
-
-module.exports = Database;

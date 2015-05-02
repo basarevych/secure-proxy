@@ -6,22 +6,13 @@ var fs          = require('fs'),
     path        = require('path'),
     url         = require('url');
 
-function getRealPath(filename) {
-    if (filename.indexOf('..') != -1)
-        return false;
-
-    var path = __dirname + '/../front/' + filename;
-    if (!fs.existsSync(path))
-        return false;
-
-    return path;
-}
-
 function Front(serviceLocator) {
     this.sl = serviceLocator;
 
     this.sl.set('front', this);
 }
+
+module.exports = Front;
 
 Front.prototype.returnInternalError = function (res) {
     res.writeHead(500, { 'Content-Type': 'text/html' });
@@ -175,4 +166,13 @@ Front.prototype.parseCookies = function (req) {
     return list;
 };
 
-module.exports = Front;
+function getRealPath(filename) {
+    if (filename.indexOf('..') != -1)
+        return false;
+
+    var path = __dirname + '/../front/' + filename;
+    if (!fs.existsSync(path))
+        return false;
+
+    return path;
+}

@@ -12,6 +12,8 @@ function Api(serviceLocator) {
     locale.Locale["default"] = 'en';
 }
 
+module.exports = Api;
+
 Api.prototype.locale = function (sid, req, res) {
     var front = this.sl.get('front'),
         config = this.sl.get('config'),
@@ -198,5 +200,3 @@ Api.prototype.otp = function (sid, req, res) {
             front.returnInternalError(res);
         });
 };
-
-module.exports = Api;

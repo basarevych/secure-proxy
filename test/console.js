@@ -1,6 +1,7 @@
 'use strict';
 
-var ServiceLocator  = require('../src/service-locator.js'),
+var q               = require('q'),
+    ServiceLocator  = require('../src/service-locator.js'),
     Database        = require('../src/database.js'),
     Console         = require('../src/console.js');
 
@@ -11,7 +12,6 @@ module.exports = {
         this.cons = new Console(this.sl);
 
         this.db.dbFile = ":memory:";
-        this.cons.rl.close();
 
         callback();
     },
@@ -42,6 +42,67 @@ module.exports = {
                     }
                 };
                 me.cons.listUsers();
+            });
+    },
+
+    testUpdateUserCreates: function (test) {
+        var defer = q.defer(), newLogin, newPassword;
+        this.db.createUser = function (login, password) {
+            newLogin = login;
+            newPassword = password;
+            defer.resolve();
+            return defer.promise;
+        };
+
+        var question = 0;
+        this.cons.rl = {
+            write: function () {},
+            question: function(text, cb) {
+                switch (++question) {
+                    case 1: cb('login'); break;
+                    case 2: cb('password'); break;
+                }
+            },
+            close: function () {
+                test.equal(newLogin, 'login', "Login is wrong");
+                test.equal(newPassword, 'password', "Password is wrong");
+                test.done();
+            }
+        };
+
+        this.cons.updateUser();
+    },
+
+    testUpdateUserModifies: function (test) {
+        var me = this;
+
+        var defer = q.defer(), newLogin, newPassword;
+        this.db.setUserPassword = function (login, password) {
+            newLogin = login;
+            newPassword = password;
+            defer.resolve();
+            return defer.promise;
+        };
+
+        var question = 0;
+        this.cons.rl = {
+            write: function () {},
+            question: function(text, cb) {
+                switch (++question) {
+                    case 1: cb('login'); break;
+                    case 2: cb('password'); break;
+                }
+            },
+            close: function () {
+                test.equal(newLogin, 'login', "Login is wrong");
+                test.equal(newPassword, 'password', "Password is wrong");
+                test.done();
+            }
+        };
+
+        this.db.createUser('login', 'password')
+            .then(function () {
+                me.cons.updateUser();
             });
     },
 };
