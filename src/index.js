@@ -21,7 +21,7 @@ if (argv['_'].length == 0
     console.log("\nCommands:");
     console.log("\tstart\t\t\tStarts the daemon");
     console.log("\tlist-users\t\tList all the users in the database");
-    console.log("\tadd-user\t\tCreates new user or modifies existing");
+    console.log("\tupdate-user\t\tCreates new user or modifies existing");
     console.log("\tdelete-user\t\tDeletes a user");
     console.log("\tlist-sessions\t\tLists existing sessions");
     console.log("\tdelete-session\t\tDeletes a session");
@@ -107,8 +107,8 @@ switch (argv['_'][0]) {
         cons.listUsers();
         break;
 
-    case 'add-user':
-        cons.addUser();
+    case 'update-user':
+        cons.updateUser();
         break;
 
     case 'delete-user':

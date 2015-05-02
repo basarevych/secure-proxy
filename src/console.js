@@ -33,11 +33,11 @@ Console.prototype.listUsers = function () {
         });
 };
 
-Console.prototype.addUser = function () {
+Console.prototype.updateUser = function () {
     var db = this.db,
         rl = this.rl;
 
-    rl.write("==> Add new user\n");
+    rl.write("==> Update user\n");
     rl.question('-> Username? ', function (username) {
         rl.question('-> Password? ', function (password) {
             db.userExists(username)
