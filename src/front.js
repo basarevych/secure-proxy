@@ -80,6 +80,32 @@ Front.prototype.requestListener = function (req, res) {
         query = url.parse(req.url),
         urlParts = query.pathname.split('/');
 
+    if (typeof sid == 'undefined') {
+        var defer = q.defer();
+
+        crypto.randomBytes(16, function (ex, buf) {
+            if (ex)
+                defer.reject(ex);
+            else
+                defer.resolve(buf.toString('hex'));
+        });
+
+        defer.promise
+            .then(function (random) {
+                var header = config['namespace'] + 'sid=' + random + '; path=/';
+                res.setHeader('set-cookie', header);
+            })
+            .then(function () {
+                me.returnFile('auth/index.html', res);
+            })
+            .catch(function (err) {
+                console.error(err);
+                me.returnInternalError(res);
+            });
+
+        return;
+    }
+
     db.selectSession(sid)
         .then(function (session) {
             var isAuthenticated = false;
@@ -116,31 +142,7 @@ Front.prototype.requestListener = function (req, res) {
                 }
             }
 
-            if (typeof sid == 'undefined') {
-                var defer = q.defer();
-
-                crypto.randomBytes(16, function (ex, buf) {
-                    if (ex)
-                        defer.reject(ex);
-                    else
-                        defer.resolve(buf.toString('hex'));
-                });
-
-                defer.promise
-                    .then(function (random) {
-                        var header = config['namespace'] + 'sid=' + random + '; path=/';
-                        res.setHeader('set-cookie', header);
-                    })
-                    .then(function () {
-                        this.returnFile('auth/index.html', res);
-                    })
-                    .catch(function (err) {
-                        console.error(err);
-                        me.returnInternalError(res);
-                    });
-
-                return;
-            } else if (isAuthenticated) {
+            if (isAuthenticated) {
                 db.refreshSession(sid)
                     .then(function () {
                         proxy.web(req, res);
