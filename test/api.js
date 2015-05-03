@@ -1,6 +1,7 @@
 'use strict';
 
-var ServiceLocator  = require('../src/service-locator.js'),
+var q               = require('q'),
+    ServiceLocator  = require('../src/service-locator.js'),
     Database        = require('../src/database.js'),
     Front           = require('../src/front.js'),
     Api             = require('../src/api.js');
@@ -96,5 +97,36 @@ module.exports = {
         };
 
         this.api.locale(undefined, req, res);
+    },
+
+    testLogout: function (test) {
+        var me = this;
+
+        var sessionDeleted = false;
+        this.db.deleteSession = function (sid) {
+            sessionDeleted = sid;
+
+            var defer = q.defer();
+            defer.resolve();
+            return defer.promise;
+        };
+
+        var res = {
+            writeHead: function (code, headers) {
+            },
+            end: function (html) {
+                var result = JSON.parse(html);
+                test.ok(typeof result['success'] != 'undefined', "success is not returned");
+                test.equal(result['success'], true, "success is not set");
+                test.equal(sessionDeleted, 'sid', "Wrong session deleted");
+                test.done();
+            }
+        };
+
+        this.db.createUser('login', 'password')
+            .then(function () { return me.db.createSession('login', 'sid'); })
+            .then(function () {
+                me.api.logout('sid', undefined, res);
+            });
     },
 };
