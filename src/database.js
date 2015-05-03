@@ -31,7 +31,8 @@ Database.prototype.getEngine = function () {
           + "  id INTEGER PRIMARY KEY ASC NOT NULL,"
           + "  login VARCHAR(255) NOT NULL,"
           + "  password VARCHAR(255) NOT NULL,"
-          + "  otp_key TEXT NOT NULL,"
+          + "  email VARCHAR(255) NOT NULL,"
+          + "  otp_key TEXT NULL,"
           + "  CONSTRAINT user_login_unique UNIQUE (login)"
           + ")"
         );
@@ -131,27 +132,22 @@ Database.prototype.selectUsers = function () {
     return defer.promise;
 };
 
-Database.prototype.createUser = function (login, password) {
+Database.prototype.createUser = function (login, password, email) {
     var me = this,
         engine = this.getEngine(),
-        defer = q.defer(),
-        config = this.sl.get('config');
-
-    var key = speakeasy.generate_key({
-        length: 20,
-        name: config['namespace'],
-    });
+        defer = q.defer();
 
     var ins = engine.prepare(
         "INSERT INTO"
-      + "   users(login, password, otp_key)"
-      + "   VALUES($login, $password, $otp_key)"
+      + "   users(login, password, email, otp_key)"
+      + "   VALUES($login, $password, $email, $otp_key)"
     );
     ins.run(
         {
             $login: login,
             $password: "* NOT SET *",
-            $otp_key: key.base32,
+            $email: email,
+            $otp_key: null,
         },
         function (err) {
             if (err) {
@@ -263,6 +259,68 @@ Database.prototype.checkUserPassword = function (login, password) {
 
     return defer.promise;
 };
+
+Database.prototype.setUserEmail = function (login, email) {
+    var engine = this.getEngine(),
+        defer = q.defer();
+
+    var upd = engine.prepare(
+        "UPDATE users"
+      + "   SET email = $email"
+      + "   WHERE login = $login"
+    );
+    upd.run(
+        {
+            $email: email,
+            $login: login
+        },
+        function (err) {
+            if (err)
+                defer.reject(err);
+            else
+                defer.resolve();
+        }
+    );
+    upd.finalize();
+
+    return defer.promise;
+};
+
+Database.prototype.generateUserOtp = function (login) {
+    var me = this,
+        engine = this.getEngine(),
+        defer = q.defer(),
+        config = this.sl.get('config');
+
+    var key = speakeasy.generate_key({
+        length: 20,
+        name: config['namespace'],
+    });
+
+    var upd = engine.prepare(
+        "UPDATE users"
+      + "  SET otp_key = $otp_key"
+      + "  WHERE login = $login"
+    );
+    upd.run(
+        {
+            $otp_key: key.base32,
+            $login: login,
+        },
+        function (err) {
+            if (err) {
+                defer.reject(err);
+                return;
+            }
+
+            defer.resolve();
+        }
+    );
+    upd.finalize();
+
+    return defer.promise;
+};
+
 
 Database.prototype.checkUserOtp = function (login, otp) {
     var engine = this.getEngine(),

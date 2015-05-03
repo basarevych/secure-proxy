@@ -24,13 +24,14 @@ module.exports = {
 
         var ins = this.engine.prepare(
             "INSERT INTO"
-          + "   users(login, password, otp_key)"
-          + "   VALUES($login, $password, $otp_key)"
+          + "   users(login, password, email, otp_key)"
+          + "   VALUES($login, $password, $email, $otp_key)"
         );
         ins.run(
             {
                 $login: 'login',
                 $password: "password",
+                $email: 'foo@bar',
                 $otp_key: 'key',
             },
             function (err) {
@@ -54,13 +55,14 @@ module.exports = {
 
         var ins = this.engine.prepare(
             "INSERT INTO"
-          + "   users(login, password, otp_key)"
-          + "   VALUES($login, $password, $otp_key)"
+          + "   users(login, password, email, otp_key)"
+          + "   VALUES($login, $password, $email, $otp_key)"
         );
         ins.run(
             {
                 $login: 'login',
                 $password: "password",
+                $email: 'foo@bar',
                 $otp_key: 'key',
             },
             function (err) {
@@ -73,6 +75,7 @@ module.exports = {
                                 id: 1,
                                 login: 'login',
                                 password: 'password',
+                                email: 'foo@bar',
                                 otp_key: 'key',
                             },
                             "Wrong data returned"
@@ -87,7 +90,7 @@ module.exports = {
     testCreateUser: function (test) {
         var me = this;
 
-        this.db.createUser('login', 'password')
+        this.db.createUser('login', 'password', 'foo@bar')
             .then(function () {
                 var sel = me.engine.prepare(
                     "SELECT *"
@@ -99,8 +102,8 @@ module.exports = {
                         test.ifError(err);
                         test.equal(rows.length, 1, "One row should be returned");
 
-                        test.equal(rows[0]['login'], 'login');
-                        test.ok(rows[0]['otp_key'].length > 0, "otp_key was not generated");
+                        test.equal(rows[0]['login'], 'login', "Incorrect login was saved");
+                        test.equal(rows[0]['email'], 'foo@bar', "Incorrect email was saved");
 
                         me.db.checkUserPassword('login', 'password')
                             .then(function (match) {
@@ -118,13 +121,14 @@ module.exports = {
 
         var ins = this.engine.prepare(
             "INSERT INTO"
-          + "   users(login, password, otp_key)"
-          + "   VALUES($login, $password, $otp_key)"
+          + "   users(login, password, email, otp_key)"
+          + "   VALUES($login, $password, $email, $otp_key)"
         );
         ins.run(
             {
                 $login: 'login',
                 $password: "password",
+                $email: 'foo@bar',
                 $otp_key: 'key',
             },
             function (err) {
@@ -155,13 +159,14 @@ module.exports = {
 
         var ins = this.engine.prepare(
             "INSERT INTO"
-          + "   users(login, password, otp_key)"
-          + "   VALUES($login, $password, $otp_key)"
+          + "   users(login, password, email, otp_key)"
+          + "   VALUES($login, $password, $email, $otp_key)"
         );
         ins.run(
             {
                 $login: 'login',
                 $password: "password",
+                $email: 'foo@bar',
                 $otp_key: 'key',
             },
             function (err) {
@@ -188,13 +193,14 @@ module.exports = {
 
         var ins = this.engine.prepare(
             "INSERT INTO"
-          + "   users(login, password, otp_key)"
-          + "   VALUES($login, $password, $otp_key)"
+          + "   users(login, password, email, otp_key)"
+          + "   VALUES($login, $password, $email, $otp_key)"
         );
         ins.run(
             {
                 $login: 'login',
                 $password: "password",
+                $email: 'foo@bar',
                 $otp_key: 'DEADBEEF',
             },
             function (err) {
@@ -215,13 +221,14 @@ module.exports = {
 
         var ins1 = this.engine.prepare(
             "INSERT INTO"
-          + "   users(login, password, otp_key)"
-          + "   VALUES($login, $password, $otp_key)"
+          + "   users(login, password, email, otp_key)"
+          + "   VALUES($login, $password, $email, $otp_key)"
         );
         ins1.run(
             {
                 $login: 'login',
                 $password: "password",
+                $email: 'foo@bar',
                 $otp_key: 'key',
             },
             function (err) {
@@ -264,13 +271,14 @@ module.exports = {
 
         var ins1 = this.engine.prepare(
             "INSERT INTO"
-          + "   users(login, password, otp_key)"
-          + "   VALUES($login, $password, $otp_key)"
+          + "   users(login, password, email, otp_key)"
+          + "   VALUES($login, $password, $email, $otp_key)"
         );
         ins1.run(
             {
                 $login: 'login',
                 $password: "password",
+                $email: 'foo@bar',
                 $otp_key: 'key',
             },
             function (err) {
@@ -321,13 +329,14 @@ module.exports = {
 
         var ins = this.engine.prepare(
             "INSERT INTO"
-          + "   users(login, password, otp_key)"
-          + "   VALUES($login, $password, $otp_key)"
+          + "   users(login, password, email, otp_key)"
+          + "   VALUES($login, $password, $email, $otp_key)"
         );
         ins.run(
             {
                 $login: 'login',
                 $password: "password",
+                $email: 'foo@bar',
                 $otp_key: 'key',
             },
             function (err) {
@@ -365,13 +374,14 @@ module.exports = {
 
         var ins1 = this.engine.prepare(
             "INSERT INTO"
-          + "   users(login, password, otp_key)"
-          + "   VALUES($login, $password, $otp_key)"
+          + "   users(login, password, email, otp_key)"
+          + "   VALUES($login, $password, $email, $otp_key)"
         );
         ins1.run(
             {
                 $login: 'login',
                 $password: "password",
+                $email: 'foo@bar',
                 $otp_key: 'key',
             },
             function (err) {
@@ -421,13 +431,14 @@ module.exports = {
 
         var ins1 = this.engine.prepare(
             "INSERT INTO"
-          + "   users(login, password, otp_key)"
-          + "   VALUES($login, $password, $otp_key)"
+          + "   users(login, password, email, otp_key)"
+          + "   VALUES($login, $password, $email, $otp_key)"
         );
         ins1.run(
             {
                 $login: 'login',
                 $password: "password",
+                $email: 'foo@bar',
                 $otp_key: 'key',
             },
             function (err) {
@@ -480,13 +491,14 @@ module.exports = {
 
         var ins1 = this.engine.prepare(
             "INSERT INTO"
-          + "   users(login, password, otp_key)"
-          + "   VALUES($login, $password, $otp_key)"
+          + "   users(login, password, email, otp_key)"
+          + "   VALUES($login, $password, $email, $otp_key)"
         );
         ins1.run(
             {
                 $login: 'login',
                 $password: "password",
+                $email: 'foo@bar',
                 $otp_key: 'key',
             },
             function (err) {
@@ -539,13 +551,14 @@ module.exports = {
 
         var ins1 = this.engine.prepare(
             "INSERT INTO"
-          + "   users(login, password, otp_key)"
-          + "   VALUES($login, $password, $otp_key)"
+          + "   users(login, password, email, otp_key)"
+          + "   VALUES($login, $password, $email, $otp_key)"
         );
         ins1.run(
             {
                 $login: 'login',
                 $password: "password",
+                $email: 'foo@bar',
                 $otp_key: 'key',
             },
             function (err) {

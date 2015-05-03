@@ -124,7 +124,7 @@ module.exports = {
             }
         };
 
-        this.db.createUser('login', 'password')
+        this.db.createUser('login', 'password', 'foo@bar')
             .then(function () { return me.db.createSession('login', 'sid'); })
             .then(function () {
                 me.api.logout('sid', undefined, res);
@@ -156,7 +156,7 @@ module.exports = {
             }
         };
 
-        this.db.createUser('login', 'password')
+        this.db.createUser('login', 'password', 'foo@bar')
             .then(function () {
                 me.api.auth('sid', req, res);
             });
@@ -181,7 +181,7 @@ module.exports = {
             }
         };
 
-        this.db.createUser('login', 'invalid password')
+        this.db.createUser('login', 'invalid password', 'foo@bar')
             .then(function () {
                 me.api.auth('sid', req, res);
             });
@@ -208,7 +208,7 @@ module.exports = {
             }
         };
 
-        this.db.createUser('login', 'password')
+        this.db.createUser('login', 'password', 'foo@bar')
             .then(function () { return me.db.createSession('login', 'sid'); })
             .then(function () {
                 me.api.otp('sid', req, res);
@@ -237,7 +237,7 @@ module.exports = {
             }
         };
 
-        this.db.createUser('login', 'password')
+        this.db.createUser('login', 'password', 'foo@bar')
             .then(function () { return me.db.createSession('login', 'sid'); })
             .then(function () { return me.db.setSessionPassword('sid', true); })
             .then(function () {
@@ -278,7 +278,7 @@ module.exports = {
             }
         };
 
-        this.db.createUser('login', 'password')
+        this.db.createUser('login', 'password', 'foo@bar')
             .then(function () { return me.db.createSession('login', 'sid'); })
             .then(function () { return me.db.setSessionPassword('sid', true); })
             .then(function () {
@@ -317,7 +317,7 @@ module.exports = {
             }
         };
 
-        this.db.createUser('login', 'password')
+        this.db.createUser('login', 'password', 'foo@bar')
             .then(function () { return me.db.createSession('login', 'sid'); })
             .then(function () { return me.db.setSessionPassword('sid', true); })
             .then(function () {

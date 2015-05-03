@@ -222,7 +222,7 @@ module.exports = {
             test.done();
         };
 
-        this.db.createUser('login', 'password')
+        this.db.createUser('login', 'password', 'foo@bar')
             .then(function () { return me.db.createSession('login', 'sid') })
             .then(function () { return me.db.setSessionPassword('sid', true) })
             .then(function () { return me.db.setSessionOtp('sid', true) })

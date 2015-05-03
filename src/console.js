@@ -45,6 +45,7 @@ Console.prototype.listUsers = function () {
                     "\nID:\t\t" + users[i]['id']
                     + "\nLogin:\t\t" + users[i]['login']
                     + "\nPassword:\t" + users[i]['password']
+                    + "\nEmail:\t\t" + users[i]['email']
                     + "\nOTP Key:\t" + users[i]['otp_key']
                     + "\n"
                 );
@@ -60,22 +61,25 @@ Console.prototype.updateUser = function () {
     rl.write("==> Update user\n");
     rl.question('-> Username? ', function (username) {
         rl.question('-> Password? ', function (password) {
-            db.userExists(username)
-                .then(function (exists) {
-                    if (exists) {
-                        db.setUserPassword(username, password)
-                            .then(function () {
-                                rl.write("==> User exists, password changed\n");
-                                rl.close();
-                            });
-                    } else {
-                        db.createUser(username, password)
-                            .then(function () {
-                                rl.write("==> User created\n");
-                                rl.close();
-                            });
-                    }
-                });
+            rl.question('-> Email? ', function (email) {
+                db.userExists(username)
+                    .then(function (exists) {
+                        if (exists) {
+                            db.setUserPassword(username, password)
+                                .then(function () { return db.setUserEmail(username, email); })
+                                .then(function () {
+                                    rl.write("==> User exists, password and email changed\n");
+                                    rl.close();
+                                });
+                        } else {
+                            db.createUser(username, password, email)
+                                .then(function () {
+                                    rl.write("==> User created\n");
+                                    rl.close();
+                                });
+                        }
+                    });
+            });
         });
     });
 };
