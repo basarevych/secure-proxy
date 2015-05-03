@@ -151,7 +151,8 @@ Api.prototype.otp = function (sid, req, res) {
             }
 
             if (action == 'get') {
-                db.selectUser(session['login'])
+                db.generateUserOtp(session['login'])
+                    .then(function () { return db.selectUser(session['login']); })
                     .then(function (user) {
                         res.writeHead(200, { 'Content-Type': 'application/json' });
                         res.end(JSON.stringify({
