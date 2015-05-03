@@ -215,7 +215,7 @@ module.exports = {
             });
     },
 
-    testOtpGet: function (test) {
+    testOtpGetNew: function (test) {
         var me = this;
 
         var req = {
@@ -238,6 +238,36 @@ module.exports = {
         };
 
         this.db.createUser('login', 'password', 'foo@bar')
+            .then(function () { return me.db.createSession('login', 'sid'); })
+            .then(function () { return me.db.setSessionPassword('sid', true); })
+            .then(function () {
+                me.api.otp('sid', req, res);
+            });
+    },
+
+    testOtpReGet: function (test) {
+        var me = this;
+
+        var req = {
+            headers: {},
+            url: '/secure-proxy/api/otp?action=get',
+        };
+
+        var res = {
+            writeHead: function (code, headers) {
+            },
+            end: function (html) {
+                var result = JSON.parse(html);
+                me.db.selectUser('login')
+                    .then(function (user) {
+                        test.ok(typeof result['qr_code'] == 'undefined', "qr_code should not be returned");
+                        test.done();
+                    });
+            }
+        };
+
+        this.db.createUser('login', 'password', 'foo@bar')
+            .then(function () { return me.db.generateUserOtp('login'); })
             .then(function () { return me.db.createSession('login', 'sid'); })
             .then(function () { return me.db.setSessionPassword('sid', true); })
             .then(function () {

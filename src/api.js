@@ -151,15 +151,26 @@ Api.prototype.otp = function (sid, req, res) {
             }
 
             if (action == 'get') {
-                db.generateUserOtp(session['login'])
-                    .then(function () { return db.selectUser(session['login']); })
+                db.selectUser(session['login'])
                     .then(function (user) {
-                        res.writeHead(200, { 'Content-Type': 'application/json' });
-                        res.end(JSON.stringify({
-                            qr_code: 'otpauth://totp/'
-                                + encodeURIComponent(config['otp']['name'])
-                                + '?secret=' + user['otp_key'],
-                        }));
+                        if (user['otp_key'] === null) {
+                            db.generateUserOtp(session['login'])
+                                .then(function () { return db.selectUser(session['login']); })
+                                .then(function (user) {
+                                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                                    res.end(JSON.stringify({
+                                        success: true,
+                                        qr_code: 'otpauth://totp/'
+                                            + encodeURIComponent(config['otp']['name'])
+                                            + '?secret=' + user['otp_key'],
+                                    }));
+                                });
+                        } else {
+                            res.writeHead(200, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({
+                                success: true,
+                            }));
+                         }
                     })
                     .catch(function (err) {
                         console.error(err);
