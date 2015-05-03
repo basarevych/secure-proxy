@@ -231,4 +231,19 @@ module.exports = {
             });
     },
 
+    testParseCookies: function (test) {
+        var req = {
+            headers: {
+                cookie: 'cookie1=value1; cookie2=value2',
+            }
+        };
+
+        var result = this.front.parseCookies(req);
+
+        test.ok(typeof result['cookie1'] != 'undefined', "Cookie1 is not returned");
+        test.equal(result['cookie1'], 'value1', "Cookie1 is incorrect");
+        test.ok(typeof result['cookie2'] != 'undefined', "Cookie2 is not returned");
+        test.equal(result['cookie2'], 'value2', "Cookie2 is incorrect");
+        test.done();
+    },
 };

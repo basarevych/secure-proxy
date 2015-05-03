@@ -21,6 +21,7 @@ module.exports = {
             namespace: 'foobar',
             otp: {
                 enable: true,
+                name: 'Example',
             },
         };
         this.sl.set('config', this.config);
@@ -117,7 +118,7 @@ module.exports = {
             end: function (html) {
                 var result = JSON.parse(html);
                 test.ok(typeof result['success'] != 'undefined', "success is not returned");
-                test.equal(result['success'], true, "success is not set");
+                test.equal(result['success'], true, "success is incorrect");
                 test.equal(sessionDeleted, 'sid', "Wrong session deleted");
                 test.done();
             }
@@ -127,6 +128,200 @@ module.exports = {
             .then(function () { return me.db.createSession('login', 'sid'); })
             .then(function () {
                 me.api.logout('sid', undefined, res);
+            });
+    },
+
+    testAuthValidPassword: function (test) {
+        var me = this;
+
+        var req = {
+            headers: {},
+            url: '/secure-proxy/api/auth?login=login&password=password',
+        };
+
+        var res = {
+            writeHead: function (code, headers) {
+            },
+            end: function (html) {
+                var result = JSON.parse(html);
+                test.ok(typeof result['success'] != 'undefined', "success is not returned");
+                test.equal(result['success'], true, "success is incorrect");
+                test.ok(typeof result['next'] != 'undefined', "next is not returned");
+                test.equal(result['next'], 'otp', "next is not set to otp");
+                me.db.selectSession('sid')
+                    .then(function (session) {
+                        test.equal(session['auth_password'], true, "auth_password is not set");
+                        test.done();
+                    });
+            }
+        };
+
+        this.db.createUser('login', 'password')
+            .then(function () {
+                me.api.auth('sid', req, res);
+            });
+    },
+
+    testAuthInvalidPassword: function (test) {
+        var me = this;
+
+        var req = {
+            headers: {},
+            url: '/secure-proxy/api/auth?login=login&password=password',
+        };
+
+        var res = {
+            writeHead: function (code, headers) {
+            },
+            end: function (html) {
+                var result = JSON.parse(html);
+                test.ok(typeof result['success'] != 'undefined', "success is not returned");
+                test.equal(result['success'], false, "success is incorrect");
+                test.done();
+            }
+        };
+
+        this.db.createUser('login', 'invalid password')
+            .then(function () {
+                me.api.auth('sid', req, res);
+            });
+    },
+
+    testOtpInvalidSession: function (test) {
+        var me = this;
+
+        var req = {
+            headers: {},
+            url: '/secure-proxy/api/otp?action=get',
+        };
+
+        var res = {
+            writeHead: function (code, headers) {
+            },
+            end: function (html) {
+                var result = JSON.parse(html);
+                test.ok(typeof result['success'] != 'undefined', "success is not returned");
+                test.equal(result['success'], false, "success is incorrect");
+                test.ok(typeof result['next'] != 'undefined', "next is not returned");
+                test.equal(result['next'], 'password', "next is not set to password");
+                test.done();
+            }
+        };
+
+        this.db.createUser('login', 'password')
+            .then(function () { return me.db.createSession('login', 'sid'); })
+            .then(function () {
+                me.api.otp('sid', req, res);
+            });
+    },
+
+    testOtpGet: function (test) {
+        var me = this;
+
+        var req = {
+            headers: {},
+            url: '/secure-proxy/api/otp?action=get',
+        };
+
+        var res = {
+            writeHead: function (code, headers) {
+            },
+            end: function (html) {
+                var result = JSON.parse(html);
+                me.db.selectUser('login')
+                    .then(function (user) {
+                        test.ok(typeof result['qr_code'] != 'undefined', "qr_code is not returned");
+                        test.equal(result['qr_code'], 'otpauth://totp/Example?secret=' + user['otp_key'], "Wrong qr_code");
+                        test.done();
+                    });
+            }
+        };
+
+        this.db.createUser('login', 'password')
+            .then(function () { return me.db.createSession('login', 'sid'); })
+            .then(function () { return me.db.setSessionPassword('sid', true); })
+            .then(function () {
+                me.api.otp('sid', req, res);
+            });
+    },
+
+    testOtpCheckCorrectPassword: function (test) {
+        var me = this;
+
+        var checkedLogin, checkedOtp;
+        this.db.checkUserOtp = function (login, otp) {
+            checkedLogin = login;
+            checkedOtp = otp;
+
+            var defer = q.defer();
+            defer.resolve(true);
+            return defer.promise;
+        };
+
+        var req = {
+            headers: {},
+            url: '/secure-proxy/api/otp?action=check&otp=foobar',
+        };
+
+        var res = {
+            writeHead: function (code, headers) {
+            },
+            end: function (html) {
+                var result = JSON.parse(html);
+                test.ok(typeof result['success'] != 'undefined', "success is not returned");
+                test.equal(result['success'], true, "success is incorrect");
+                test.ok(typeof result['next'] != 'undefined', "next is not returned");
+                test.equal(result['next'], 'done', "next is not set to done");
+                test.equal(checkedLogin, 'login', 'Wrong login checked for OTP');
+                test.equal(checkedOtp, 'foobar', 'Wrong password checked for OTP');
+                test.done();
+            }
+        };
+
+        this.db.createUser('login', 'password')
+            .then(function () { return me.db.createSession('login', 'sid'); })
+            .then(function () { return me.db.setSessionPassword('sid', true); })
+            .then(function () {
+                me.api.otp('sid', req, res);
+            });
+    },
+
+    testOtpCheckIncorrectPassword: function (test) {
+        var me = this;
+
+        var checkedLogin, checkedOtp;
+        this.db.checkUserOtp = function (login, otp) {
+            checkedLogin = login;
+            checkedOtp = otp;
+
+            var defer = q.defer();
+            defer.resolve(false);
+            return defer.promise;
+        };
+
+        var req = {
+            headers: {},
+            url: '/secure-proxy/api/otp?action=check&otp=foobar',
+        };
+
+        var res = {
+            writeHead: function (code, headers) {
+            },
+            end: function (html) {
+                var result = JSON.parse(html);
+                test.ok(typeof result['success'] != 'undefined', "success is not returned");
+                test.equal(result['success'], false, "success is incorrect");
+                test.equal(checkedLogin, 'login', 'Wrong login checked for OTP');
+                test.equal(checkedOtp, 'foobar', 'Wrong password checked for OTP');
+                test.done();
+            }
+        };
+
+        this.db.createUser('login', 'password')
+            .then(function () { return me.db.createSession('login', 'sid'); })
+            .then(function () { return me.db.setSessionPassword('sid', true); })
+            .then(function () {
+                me.api.otp('sid', req, res);
             });
     },
 };
