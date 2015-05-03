@@ -374,4 +374,39 @@ module.exports = {
                 me.api.otp('sid', req, res);
             });
     },
+
+    testOtpReset: function (test) {
+        var me = this;
+
+        var req = {
+            headers: {},
+            url: '/secure-proxy/api/otp?action=reset&key=foobar',
+        };
+
+        var returnedCode, oldKey;
+        var res = {
+            writeHead: function (code, headers) {
+                returnedCode = code;
+            },
+            end: function (html) {
+                test.equal(returnedCode, 302, "Wrong HTTP code returned");
+                me.db.selectUser('login')
+                    .then(function (user) {
+                        test.notEqual(user['otp_key'], oldKey, "otp_key was not changed");
+                        test.equal(user['otp_confirmed'], false, "otp_confirmed was not reset");
+                        test.done();
+                    });
+            }
+        };
+
+        this.db.createUser('login', 'password', 'foo@bar')
+            .then(function () { return me.db.createSession('login', 'sid'); })
+            .then(function () { return me.db.setSessionPassword('sid', true); })
+            .then(function () { return me.db.selectUser('login'); })
+            .then(function (user) {
+                oldKey = user['otp_key'];
+                req.url = '/secure-proxy/api/otp?action=reset&key=' + user['otp_key'];
+                me.api.otp('sid', req, res);
+            });
+    },
 };

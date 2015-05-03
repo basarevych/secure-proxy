@@ -137,7 +137,8 @@ Api.prototype.otp = function (sid, req, res) {
         config = this.sl.get('config'),
         query = url.parse(req.url, true),
         action = query.query['action'],
-        otp = query.query['otp'];
+        otp = query.query['otp'],
+        key = query.query['key'];
 
     if (typeof sid == 'undefined' || typeof action == 'undefined')
         return front.returnBadRequest(res);
@@ -178,7 +179,7 @@ Api.prototype.otp = function (sid, req, res) {
                         console.error(err);
                         front.returnInternalError(res);
                     });
-            } else if (action = 'check') {
+            } else if (action == 'check') {
                 db.checkUserOtp(session['login'], otp)
                     .then(function (correct) {
                         if (correct) {
@@ -200,6 +201,27 @@ Api.prototype.otp = function (sid, req, res) {
                                 success: false
                             }));
                         }
+                    })
+                    .catch(function (err) {
+                        console.error(err);
+                        front.returnInternalError(res);
+                    });
+            } else if (action == 'reset') {
+                db.selectUser(session['login'])
+                    .then(function (user) {
+                        if (typeof key == 'undefined' || user['otp_key'] != key)
+                            return front.returnBadRequest(res);
+
+                        db.setUserOtpConfirmed(session['login'], false)
+                            .then(function () { return db.generateUserOtpKey(session['login']); })
+                            .then(function () {
+                                res.writeHead(302, { 'Location': '/' });
+                                res.end();
+                            })
+                            .catch(function (err) {
+                                console.error(err);
+                                front.returnInternalError(res);
+                            });
                     })
                     .catch(function (err) {
                         console.error(err);
