@@ -90,6 +90,46 @@ module.exports = {
         ins.finalize();
      },
 
+    testSelectUsers: function (test) {
+        var me = this;
+
+        var ins = this.engine.prepare(
+            "INSERT INTO"
+          + "   users(login, password, email, otp_key, otp_confirmed)"
+          + "   VALUES($login, $password, $email, $otp_key, $otp_confirmed)"
+        );
+        ins.run(
+            {
+                $login: 'login',
+                $password: "password",
+                $email: 'foo@bar',
+                $otp_key: 'key',
+                $otp_confirmed: false,
+            },
+            function (err) {
+                test.ifError(err);
+                me.db.selectUsers()
+                    .then(function (users) {
+                        test.ok(users.length == 1, "One row should be returned");
+                        test.deepEqual(
+                            users[0],
+                            {
+                                id: 1,
+                                login: 'login',
+                                password: 'password',
+                                email: 'foo@bar',
+                                otp_key: 'key',
+                                otp_confirmed: false,
+                            },
+                            "Wrong data returned"
+                        );
+                        test.done();
+                    });
+            }
+        );
+        ins.finalize();
+     },
+
     testCreateUser: function (test) {
         var me = this;
 
@@ -193,6 +233,48 @@ module.exports = {
         ins.finalize();
     },
 
+    testSetUserEmail: function (test) {
+        var me = this;
+
+        var ins = this.engine.prepare(
+            "INSERT INTO"
+          + "   users(login, password, email, otp_key, otp_confirmed)"
+          + "   VALUES($login, $password, $email, $otp_key, $otp_confirmed)"
+        );
+        ins.run(
+            {
+                $login: 'login',
+                $password: "password",
+                $email: 'foo@bar',
+                $otp_key: 'key',
+                $otp_confirmed: false,
+            },
+            function (err) {
+                test.ifError(err);
+                me.db.setUserEmail('login', 'new@email')
+                    .then(function () {
+                        var sel = me.engine.prepare(
+                            "SELECT email"
+                          + "   FROM users"
+                          + "   WHERE login = $login"
+                        );
+                        sel.get(
+                            {
+                                $login: 'login',
+                            },
+                            function (err, row) {
+                                test.ifError(err);
+                                test.equal(row['email'], 'new@email', "email is not changed");
+                                test.done();
+                            }
+                        );
+                        sel.finalize();
+                    });
+            }
+        );
+        ins.finalize();
+    },
+
     testGenerateUserOtpKey: function (test) {
         var me = this;
 
@@ -263,7 +345,49 @@ module.exports = {
             }
         );
         ins.finalize();
-     },
+    },
+
+    testSetUserOtpConfirmed: function (test) {
+        var me = this;
+
+        var ins = this.engine.prepare(
+            "INSERT INTO"
+          + "   users(login, password, email, otp_key, otp_confirmed)"
+          + "   VALUES($login, $password, $email, $otp_key, $otp_confirmed)"
+        );
+        ins.run(
+            {
+                $login: 'login',
+                $password: "password",
+                $email: 'foo@bar',
+                $otp_key: 'key',
+                $otp_confirmed: false,
+            },
+            function (err) {
+                test.ifError(err);
+                me.db.setUserOtpConfirmed('login', true)
+                    .then(function () {
+                        var sel = me.engine.prepare(
+                            "SELECT otp_confirmed"
+                          + "   FROM users"
+                          + "   WHERE login = $login"
+                        );
+                        sel.get(
+                            {
+                                $login: 'login',
+                            },
+                            function (err, row) {
+                                test.ifError(err);
+                                test.equal(row['otp_confirmed'], true, "otp_confirmed is not changed");
+                                test.done();
+                            }
+                        );
+                        sel.finalize();
+                    });
+            }
+        );
+        ins.finalize();
+    },
 
     testSessionExists: function (test) {
         var me = this;
@@ -353,6 +477,66 @@ module.exports = {
                             .then(function (session) {
                                 test.deepEqual(
                                     session,
+                                    {
+                                        id: 1,
+                                        user_id: 1,
+                                        login: 'login',
+                                        sid: 'sid',
+                                        last: time,
+                                        auth_password: false,
+                                        auth_otp: false
+                                    },
+                                    "Wrong data returned"
+                                );
+                                test.done();
+                            });
+                    }
+                );
+                ins2.finalize();
+            }
+        );
+        ins1.finalize();
+    },
+
+    testSelectSessions: function (test) {
+        var me = this,
+            time = new Date().getTime();
+
+        var ins1 = this.engine.prepare(
+            "INSERT INTO"
+          + "   users(login, password, email, otp_key, otp_confirmed)"
+          + "   VALUES($login, $password, $email, $otp_key, $otp_confirmed)"
+        );
+        ins1.run(
+            {
+                $login: 'login',
+                $password: "password",
+                $email: 'foo@bar',
+                $otp_key: 'key',
+                $otp_confirmed: false,
+            },
+            function (err) {
+                test.ifError(err);
+                var ins2 = me.engine.prepare(
+                    "INSERT INTO"
+                  + "   sessions(user_id, sid, last, auth_password, auth_otp)"
+                  + "   VALUES($user_id, $sid, $last, $auth_password, $auth_otp)"
+                );
+                ins2.run(
+                    {
+                        $user_id: 1,
+                        $sid: 'sid',
+                        $last: time,
+                        $auth_password: false,
+                        $auth_otp: false,
+                    },
+                    function (err) {
+                        test.ifError(err);
+                        me.db.selectSessions()
+                            .then(function (sessions) {
+                                test.ok(sessions.length == 1, "One row should be returned");
+                                test.deepEqual(
+                                    sessions[0],
                                     {
                                         id: 1,
                                         user_id: 1,
