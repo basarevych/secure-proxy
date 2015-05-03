@@ -153,9 +153,13 @@ Api.prototype.otp = function (sid, req, res) {
             if (action == 'get') {
                 db.selectUser(session['login'])
                     .then(function (user) {
-                        if (user['otp_key'] === null) {
-                            db.generateUserOtp(session['login'])
-                                .then(function () { return db.selectUser(session['login']); })
+                        if (user['otp_confirmed']) {
+                            res.writeHead(200, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({
+                                success: true,
+                            }));
+                        } else {
+                            db.selectUser(session['login'])
                                 .then(function (user) {
                                     res.writeHead(200, { 'Content-Type': 'application/json' });
                                     res.end(JSON.stringify({
@@ -165,12 +169,7 @@ Api.prototype.otp = function (sid, req, res) {
                                             + '?secret=' + user['otp_key'],
                                     }));
                                 });
-                        } else {
-                            res.writeHead(200, { 'Content-Type': 'application/json' });
-                            res.end(JSON.stringify({
-                                success: true,
-                            }));
-                         }
+                        }
                     })
                     .catch(function (err) {
                         console.error(err);

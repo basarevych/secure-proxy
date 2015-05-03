@@ -47,6 +47,7 @@ Console.prototype.listUsers = function () {
                     + "\nPassword:\t" + users[i]['password']
                     + "\nEmail:\t\t" + users[i]['email']
                     + "\nOTP Key:\t" + users[i]['otp_key']
+                    + "\nOTP Confirmed:\t" + (users[i]['otp_confirmed'] ? 'true' : 'false')
                     + "\n"
                 );
             }

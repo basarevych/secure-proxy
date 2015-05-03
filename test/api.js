@@ -267,7 +267,7 @@ module.exports = {
         };
 
         this.db.createUser('login', 'password', 'foo@bar')
-            .then(function () { return me.db.generateUserOtp('login'); })
+            .then(function () { return me.db.setUserOtpConfirmed('login', true); })
             .then(function () { return me.db.createSession('login', 'sid'); })
             .then(function () { return me.db.setSessionPassword('sid', true); })
             .then(function () {

@@ -24,7 +24,6 @@ module.exports = {
         var me = this;
 
         this.db.createUser('login', 'password', 'foo@bar')
-            .then(function () { return me.db.generateUserOtp('login'); })
             .then(function () { return me.db.selectUser('login'); })
             .then(function (user) {
                 var output = [];
@@ -40,6 +39,7 @@ module.exports = {
                         test.equal(checkArray(output, /Password:\s+(\S+)/, user['password']), true, "password is missing");
                         test.equal(checkArray(output, /Email:\s+foo@bar$/), true, "email is missing");
                         test.equal(checkArray(output, /OTP Key:\s+(\S+)/, user['otp_key']), true, "otp_key is missing");
+                        test.equal(checkArray(output, /OTP Confirmed:\s+false$/), true, "otp_cofirmed is missing");
                         test.done();
                     }
                 };

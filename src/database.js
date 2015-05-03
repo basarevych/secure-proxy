@@ -32,7 +32,8 @@ Database.prototype.getEngine = function () {
           + "  login VARCHAR(255) NOT NULL,"
           + "  password VARCHAR(255) NOT NULL,"
           + "  email VARCHAR(255) NOT NULL,"
-          + "  otp_key TEXT NULL,"
+          + "  otp_key TEXT NOT NULL,"
+          + "  otp_confirmed BOOLEAN NOT NULL,"
           + "  CONSTRAINT user_login_unique UNIQUE (login)"
           + ")"
         );
@@ -139,15 +140,16 @@ Database.prototype.createUser = function (login, password, email) {
 
     var ins = engine.prepare(
         "INSERT INTO"
-      + "   users(login, password, email, otp_key)"
-      + "   VALUES($login, $password, $email, $otp_key)"
+      + "   users(login, password, email, otp_key, otp_confirmed)"
+      + "   VALUES($login, $password, $email, $otp_key, $otp_confirmed)"
     );
     ins.run(
         {
             $login: login,
             $password: "* NOT SET *",
             $email: email,
-            $otp_key: null,
+            $otp_key: '',
+            $otp_confirmed: false,
         },
         function (err) {
             if (err) {
@@ -156,8 +158,9 @@ Database.prototype.createUser = function (login, password, email) {
             }
 
             me.setUserPassword(login, password)
-                .then(function (data) {
-                    defer.resolve(data);
+                .then(function () { return me.generateUserOtpKey(login); })
+                .then(function () {
+                    defer.resolve();
                 })
                 .catch(function (err) {
                     defer.reject(err);
@@ -286,7 +289,7 @@ Database.prototype.setUserEmail = function (login, email) {
     return defer.promise;
 };
 
-Database.prototype.generateUserOtp = function (login) {
+Database.prototype.generateUserOtpKey = function (login) {
     var me = this,
         engine = this.getEngine(),
         defer = q.defer(),
@@ -321,8 +324,7 @@ Database.prototype.generateUserOtp = function (login) {
     return defer.promise;
 };
 
-
-Database.prototype.checkUserOtp = function (login, otp) {
+Database.prototype.checkUserOtpKey = function (login, otp) {
     var engine = this.getEngine(),
         defer = q.defer();
 
@@ -339,6 +341,32 @@ Database.prototype.checkUserOtp = function (login, otp) {
         .catch(function (err) {
             defer.reject(err);
         });
+
+    return defer.promise;
+};
+
+Database.prototype.setUserOtpConfirmed = function (login, confirmed) {
+    var engine = this.getEngine(),
+        defer = q.defer();
+
+    var upd = engine.prepare(
+        "UPDATE users"
+      + "   SET otp_confirmed = $otp_confirmed"
+      + "   WHERE login = $login"
+    );
+    upd.run(
+        {
+            $otp_confirmed: confirmed,
+            $login: login
+        },
+        function (err) {
+            if (err)
+                defer.reject(err);
+            else
+                defer.resolve();
+        }
+    );
+    upd.finalize();
 
     return defer.promise;
 };
