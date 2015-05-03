@@ -77,10 +77,11 @@
                         <div id="otp-section" style="display: none">
                             <div id="otp-messages"></div>
 
-                            <div class="form-group">
+                            <div id="qr-show-group" class="form-group">
                                 <label id="qr-label" class="col-sm-4 control-label"></label>
                                 <div class="col-sm-8">
                                     <div id="qr-code"></div>
+                                    <div id="reset-code" class="form-control-static"></div>
                                 </div>
                             </div>
 
@@ -147,6 +148,7 @@
                 $('#submit-password-button').text(gl.formatMessage('SUBMIT_LABEL'));
                 $('#qr-label').text(gl.formatMessage('QR_LABEL'));
                 $('#otp-label').text(gl.formatMessage('OTP_LABEL'));
+                $('#reset-label').text(gl.formatMessage('RESET_LABEL'));
                 $('#submit-otp-button').text(gl.formatMessage('SUBMIT_LABEL'));
                 $('#login-form .form-group').removeClass('has-error');
                 $('#login-form .help-block ul').empty();
@@ -195,8 +197,11 @@
                                             return;
                                         }
                                         if (typeof data['qr_code'] == 'undefined') {
-                                            $('#qr-code').hide();
+                                            $('#qr-show-group').hide();
+                                            $('#otp-reset-group').show();
                                         } else {
+                                            $('#qr-show-group').show();
+                                            $('#otp-reset-group').hide();
                                             $('#qr-code').qrcode({
                                                 "width": 80,
                                                 "height": 80,

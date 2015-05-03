@@ -6,6 +6,7 @@
         "SUBMIT_LABEL": "Sign in",
         "QR_LABEL": "Please scan with Google Authenticator",
         "OTP_LABEL": "Code",
+        "RESET_LABEL": "Reset one time password",
         "FIELD_EMPTY": "Value is required and can't be empty",
         "INVALID_LOGIN": "Invalid login or password",
         "INVALID_OTP": "Invalid code"

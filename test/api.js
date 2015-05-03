@@ -33,10 +33,10 @@ module.exports = {
         callback();
     },
 
-    testLocaleSetsCookie: function (test) {
+    testInitSetsLocaleCookie: function (test) {
         var req = {
             headers: {},
-            url: '/secure-proxy/api/locale?set=en',
+            url: '/secure-proxy/api/init?set_locale=en',
         };
 
         var returnedHeaders = {};
@@ -53,15 +53,15 @@ module.exports = {
             }
         };
 
-        this.api.locale(undefined, req, res);
+        this.api.init('sid', req, res);
     },
 
-    testLocaleGetsCookie: function (test) {
+    testInitReadsCookie: function (test) {
         var req = {
             headers: {
                 cookie: 'foobarlocale=en',
             },
-            url: '/secure-proxy/api/locale',
+            url: '/secure-proxy/api/init',
         };
 
         var res = {
@@ -75,15 +75,15 @@ module.exports = {
             }
         };
 
-        this.api.locale(undefined, req, res);
+        this.api.init('sid', req, res);
     },
 
-    testLocaleGetsAutoselected: function (test) {
+    testInitAutoselectsLocale: function (test) {
         var req = {
             headers: {
                 'accept-language': 'ru_RU,ru;q=0.8,en_US;q=0.6'
             },
-            url: '/secure-proxy/api/locale',
+            url: '/secure-proxy/api/init',
         };
 
         var res = {
@@ -97,7 +97,27 @@ module.exports = {
             }
         };
 
-        this.api.locale(undefined, req, res);
+        this.api.init('sid', req, res);
+    },
+
+    testInitSetsSid: function (test) {
+        var req = {
+            headers: {},
+            url: '/secure-proxy/api/init',
+        };
+
+        var res = {
+            writeHead: function (code, headers) {
+            },
+            end: function (html) {
+                var result = JSON.parse(html);
+                test.ok(typeof result['sid'] != 'undefined', "SID is not returned");
+                test.equal(result['sid'], 'sid', "Wrong SID is returned");
+                test.done();
+            }
+        };
+
+        this.api.init('sid', req, res);
     },
 
     testLogout: function (test) {

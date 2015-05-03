@@ -76,35 +76,12 @@ Front.prototype.requestListener = function (req, res) {
         proxy = this.sl.get('proxy'),
         config = this.sl.get('config'),
         cookies = this.parseCookies(req),
-        sid = cookies[config['namespace'] + 'sid'],
-        query = url.parse(req.url),
+        query = url.parse(req.url, true),
+        sid = query.query['sid'],
         urlParts = query.pathname.split('/');
 
-    if (typeof sid == 'undefined') {
-        var defer = q.defer();
-
-        crypto.randomBytes(16, function (ex, buf) {
-            if (ex)
-                defer.reject(ex);
-            else
-                defer.resolve(buf.toString('hex'));
-        });
-
-        defer.promise
-            .then(function (random) {
-                var header = config['namespace'] + 'sid=' + random + '; path=/';
-                res.setHeader('set-cookie', header);
-            })
-            .then(function () {
-                me.returnFile('auth/index.html', res);
-            })
-            .catch(function (err) {
-                console.error(err);
-                me.returnInternalError(res);
-            });
-
-        return;
-    }
+    if (typeof sid == 'undefined')
+        sid = cookies[config['namespace'] + 'sid'],
 
     db.selectSession(sid)
         .then(function (session) {
@@ -148,6 +125,32 @@ Front.prototype.requestListener = function (req, res) {
                         proxy.web(req, res);
                     });
             } else {
+                if (typeof sid == 'undefined') {
+                    var defer = q.defer();
+
+                    crypto.randomBytes(16, function (ex, buf) {
+                        if (ex)
+                            defer.reject(ex);
+                        else
+                            defer.resolve(buf.toString('hex'));
+                    });
+
+                    defer.promise
+                        .then(function (random) {
+                            var header = config['namespace'] + 'sid=' + random + '; path=/';
+                            res.setHeader('set-cookie', header);
+                        })
+                        .then(function () {
+                            me.returnFile('auth/index.html', res);
+                        })
+                        .catch(function (err) {
+                            console.error(err);
+                            me.returnInternalError(res);
+                        });
+
+                    return;
+                }
+
                 me.returnFile('auth/index.html', res);
             }
         })

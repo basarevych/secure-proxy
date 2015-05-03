@@ -140,7 +140,7 @@ module.exports = {
     testRequestListenerSetsSid: function (test) {
         var req = {
             headers: {},
-            url: '/secure-proxy/static/auth/css/index.css',
+            url: '/some/path',
         };
 
         var returnedHeaders = {};

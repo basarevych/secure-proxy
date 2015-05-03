@@ -6,6 +6,7 @@
         "SUBMIT_LABEL": "Войти",
         "QR_LABEL": "Пожалуйста, сканируйте с помощью Google Authenticator",
         "OTP_LABEL": "Код",
+        "RESET_LABEL": "Сбросить одноразовый пароль",
         "FIELD_EMPTY": "Поле обязательно и не может быть пустым",
         "INVALID_LOGIN": "Неправильный логин или пароль",
         "INVALID_OTP": "Неправильный код"

@@ -14,33 +14,36 @@ function Api(serviceLocator) {
 
 module.exports = Api;
 
-Api.prototype.locale = function (sid, req, res) {
+Api.prototype.init = function (sid, req, res) {
     var front = this.sl.get('front'),
         config = this.sl.get('config'),
         query = url.parse(req.url, true),
-        set = query.query['set'],
+        setLocale = query.query['set_locale'],
         cookies = front.parseCookies(req),
-        cookie = cookies[config['namespace'] + 'locale'],
+        localeCookie = cookies[config['namespace'] + 'locale'],
         supported = [ 'en', 'ru' ],
         locales = new locale.Locales(req.headers["accept-language"])
 
     var result = null;
-    if (typeof set != 'undefined' && supported.indexOf(set) != -1) {
-        result = set;
+    if (typeof setLocale != 'undefined' && supported.indexOf(setLocale) != -1) {
+        result = setLocale;
 
-        var header = config['namespace'] + 'locale=' + set + '; path=/';
+        var header = config['namespace'] + 'locale=' + result + '; path=/';
         res.setHeader('set-cookie', header);
     }
 
     if (!result) {
-        if (typeof cookie != 'undefined' && supported.indexOf(cookie) != -1)
-            result = cookie;
+        if (typeof localeCookie != 'undefined' && supported.indexOf(localeCookie) != -1)
+            result = localeCookie;
         else
             result = locales.best(new locale.Locales(supported));
     }
 
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ locale: result }));
+    res.end(JSON.stringify({
+        locale: result,
+        sid: sid,
+    }));
 };
 
 Api.prototype.logout = function (sid, req, res) {
@@ -88,6 +91,19 @@ Api.prototype.auth = function (sid, req, res) {
                     .then(function (session) {
                         var defer = q.defer();
 
+                        if (typeof session == 'undefined') {
+                            defer.resolve();
+                        } else {
+                            db.deleteSession(sid)
+                                .then(function () {
+                                    defer.resolve();
+                                })
+                                .catch(function (err) {
+                                    console.error(err);
+                                    front.returnInternalError(res);
+                                });
+                        }
+
                         defer.promise
                             .then(function () { return db.createSession(login, sid) })
                             .then(function () { return db.setSessionPassword(sid, true) })
@@ -102,19 +118,6 @@ Api.prototype.auth = function (sid, req, res) {
                                 console.error(err);
                                 front.returnInternalError(res);
                             });
-
-                        if (typeof session == 'undefined') {
-                            defer.resolve();
-                        } else {
-                            db.deleteSession(sid)
-                                .then(function () {
-                                    defer.resolve();
-                                })
-                                .catch(function (err) {
-                                    console.error(err);
-                                    front.returnInternalError(res);
-                                });
-                        }
                     })
                     .catch(function (err) {
                         console.error(err);
