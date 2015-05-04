@@ -3,6 +3,7 @@
 var fs          = require('fs'),
     sqlite3     = require('sqlite3'),
     q           = require('q'),
+    crypto      = require('crypto'),
     bcrypt      = require('bcrypt'),
     speakeasy   = require('speakeasy');
 
@@ -32,6 +33,7 @@ Database.prototype.getEngine = function () {
           + "  login VARCHAR(255) NOT NULL,"
           + "  password VARCHAR(255) NOT NULL,"
           + "  email VARCHAR(255) NOT NULL,"
+          + "  secret TEXT NOT NULL,"
           + "  otp_key TEXT NOT NULL,"
           + "  otp_confirmed BOOLEAN NOT NULL,"
           + "  CONSTRAINT user_login_unique UNIQUE (login)"
@@ -140,14 +142,15 @@ Database.prototype.createUser = function (login, password, email) {
 
     var ins = engine.prepare(
         "INSERT INTO"
-      + "   users(login, password, email, otp_key, otp_confirmed)"
-      + "   VALUES($login, $password, $email, $otp_key, $otp_confirmed)"
+      + "   users(login, password, email, secret, otp_key, otp_confirmed)"
+      + "   VALUES($login, $password, $email, $secret, $otp_key, $otp_confirmed)"
     );
     ins.run(
         {
             $login: login,
             $password: "* NOT SET *",
             $email: email,
+            $secret: "* NOT SET *",
             $otp_key: '',
             $otp_confirmed: false,
         },
@@ -157,10 +160,20 @@ Database.prototype.createUser = function (login, password, email) {
                 return;
             }
 
-            me.setUserPassword(login, password)
+            me.generateUserSecret(login)
                 .then(function () { return me.generateUserOtpKey(login); })
                 .then(function () {
-                    defer.resolve();
+                    if (password) {
+                        me.setUserPassword(login, password)
+                            .then(function () {
+                                defer.resolve();
+                            })
+                            .catch(function (err) {
+                                defer.reject(err);
+                            });
+                    } else {
+                        defer.resolve();
+                    }
                 })
                 .catch(function (err) {
                     defer.reject(err);
@@ -285,6 +298,43 @@ Database.prototype.setUserEmail = function (login, email) {
         }
     );
     upd.finalize();
+
+    return defer.promise;
+};
+
+Database.prototype.generateUserSecret = function (login) {
+    var me = this,
+        engine = this.getEngine(),
+        defer = q.defer();
+
+    crypto.randomBytes(16, function (ex, buf) {
+        if (ex) {
+            defer.reject(ex);
+            return;
+        }
+
+        var token = buf.toString('hex');
+        var upd = engine.prepare(
+            "UPDATE users"
+          + "  SET secret = $secret"
+          + "  WHERE login = $login"
+        );
+        upd.run(
+            {
+                $secret: token,
+                $login: login,
+            },
+            function (err) {
+                if (err) {
+                    defer.reject(err);
+                    return;
+                }
+
+                defer.resolve();
+            }
+        );
+        upd.finalize();
+    });
 
     return defer.promise;
 };

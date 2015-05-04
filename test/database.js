@@ -24,14 +24,15 @@ module.exports = {
 
         var ins = this.engine.prepare(
             "INSERT INTO"
-          + "   users(login, password, email, otp_key, otp_confirmed)"
-          + "   VALUES($login, $password, $email, $otp_key, $otp_confirmed)"
+          + "   users(login, password, email, secret, otp_key, otp_confirmed)"
+          + "   VALUES($login, $password, $email, $secret, $otp_key, $otp_confirmed)"
         );
         ins.run(
             {
                 $login: 'login',
                 $password: "password",
                 $email: 'foo@bar',
+                $secret: 'secret',
                 $otp_key: 'key',
                 $otp_confirmed: false,
             },
@@ -56,14 +57,15 @@ module.exports = {
 
         var ins = this.engine.prepare(
             "INSERT INTO"
-          + "   users(login, password, email, otp_key, otp_confirmed)"
-          + "   VALUES($login, $password, $email, $otp_key, $otp_confirmed)"
+          + "   users(login, password, email, secret, otp_key, otp_confirmed)"
+          + "   VALUES($login, $password, $email, $secret, $otp_key, $otp_confirmed)"
         );
         ins.run(
             {
                 $login: 'login',
                 $password: "password",
                 $email: 'foo@bar',
+                $secret: 'secret',
                 $otp_key: 'key',
                 $otp_confirmed: false,
             },
@@ -78,6 +80,7 @@ module.exports = {
                                 login: 'login',
                                 password: 'password',
                                 email: 'foo@bar',
+                                secret: 'secret',
                                 otp_key: 'key',
                                 otp_confirmed: false,
                             },
@@ -95,14 +98,15 @@ module.exports = {
 
         var ins = this.engine.prepare(
             "INSERT INTO"
-          + "   users(login, password, email, otp_key, otp_confirmed)"
-          + "   VALUES($login, $password, $email, $otp_key, $otp_confirmed)"
+          + "   users(login, password, email, secret, otp_key, otp_confirmed)"
+          + "   VALUES($login, $password, $email, $secret, $otp_key, $otp_confirmed)"
         );
         ins.run(
             {
                 $login: 'login',
                 $password: "password",
                 $email: 'foo@bar',
+                $secret: 'secret',
                 $otp_key: 'key',
                 $otp_confirmed: false,
             },
@@ -118,6 +122,7 @@ module.exports = {
                                 login: 'login',
                                 password: 'password',
                                 email: 'foo@bar',
+                                secret: 'secret',
                                 otp_key: 'key',
                                 otp_confirmed: false,
                             },
@@ -164,14 +169,15 @@ module.exports = {
 
         var ins = this.engine.prepare(
             "INSERT INTO"
-          + "   users(login, password, email, otp_key, otp_confirmed)"
-          + "   VALUES($login, $password, $email, $otp_key, $otp_confirmed)"
+          + "   users(login, password, email, secret, otp_key, otp_confirmed)"
+          + "   VALUES($login, $password, $email, $secret, $otp_key, $otp_confirmed)"
         );
         ins.run(
             {
                 $login: 'login',
                 $password: "password",
                 $email: 'foo@bar',
+                $secret: 'secret',
                 $otp_key: 'key',
                 $otp_confirmed: false,
             },
@@ -203,14 +209,15 @@ module.exports = {
 
         var ins = this.engine.prepare(
             "INSERT INTO"
-          + "   users(login, password, email, otp_key, otp_confirmed)"
-          + "   VALUES($login, $password, $email, $otp_key, $otp_confirmed)"
+          + "   users(login, password, email, secret, otp_key, otp_confirmed)"
+          + "   VALUES($login, $password, $email, $secret, $otp_key, $otp_confirmed)"
         );
         ins.run(
             {
                 $login: 'login',
                 $password: "password",
                 $email: 'foo@bar',
+                $secret: 'secret',
                 $otp_key: 'key',
                 $otp_confirmed: false,
             },
@@ -238,14 +245,15 @@ module.exports = {
 
         var ins = this.engine.prepare(
             "INSERT INTO"
-          + "   users(login, password, email, otp_key, otp_confirmed)"
-          + "   VALUES($login, $password, $email, $otp_key, $otp_confirmed)"
+          + "   users(login, password, email, secret, otp_key, otp_confirmed)"
+          + "   VALUES($login, $password, $email, $secret, $otp_key, $otp_confirmed)"
         );
         ins.run(
             {
                 $login: 'login',
                 $password: "password",
                 $email: 'foo@bar',
+                $secret: 'secret',
                 $otp_key: 'key',
                 $otp_confirmed: false,
             },
@@ -280,14 +288,15 @@ module.exports = {
 
         var ins = this.engine.prepare(
             "INSERT INTO"
-          + "   users(login, password, email, otp_key, otp_confirmed)"
-          + "   VALUES($login, $password, $email, $otp_key, $otp_confirmed)"
+          + "   users(login, password, email, secret, otp_key, otp_confirmed)"
+          + "   VALUES($login, $password, $email, $secret, $otp_key, $otp_confirmed)"
         );
         ins.run(
             {
                 $login: 'login',
                 $password: "password",
                 $email: 'foo@bar',
+                $secret: 'secret',
                 $otp_key: 'DEADBEEF',
                 $otp_confirmed: false,
             },
@@ -323,14 +332,15 @@ module.exports = {
 
         var ins = this.engine.prepare(
             "INSERT INTO"
-          + "   users(login, password, email, otp_key, otp_confirmed)"
-          + "   VALUES($login, $password, $email, $otp_key, $otp_confirmed)"
+          + "   users(login, password, email, secret, otp_key, otp_confirmed)"
+          + "   VALUES($login, $password, $email, $secret, $otp_key, $otp_confirmed)"
         );
         ins.run(
             {
                 $login: 'login',
                 $password: "password",
                 $email: 'foo@bar',
+                $secret: 'secret',
                 $otp_key: 'DEADBEEF',
                 $otp_confirmed: false,
             },
@@ -352,14 +362,15 @@ module.exports = {
 
         var ins = this.engine.prepare(
             "INSERT INTO"
-          + "   users(login, password, email, otp_key, otp_confirmed)"
-          + "   VALUES($login, $password, $email, $otp_key, $otp_confirmed)"
+          + "   users(login, password, email, secret, otp_key, otp_confirmed)"
+          + "   VALUES($login, $password, $email, $secret, $otp_key, $otp_confirmed)"
         );
         ins.run(
             {
                 $login: 'login',
                 $password: "password",
                 $email: 'foo@bar',
+                $secret: 'secret',
                 $otp_key: 'key',
                 $otp_confirmed: false,
             },
@@ -394,14 +405,15 @@ module.exports = {
 
         var ins1 = this.engine.prepare(
             "INSERT INTO"
-          + "   users(login, password, email, otp_key, otp_confirmed)"
-          + "   VALUES($login, $password, $email, $otp_key, $otp_confirmed)"
+          + "   users(login, password, email, secret, otp_key, otp_confirmed)"
+          + "   VALUES($login, $password, $email, $secret, $otp_key, $otp_confirmed)"
         );
         ins1.run(
             {
                 $login: 'login',
                 $password: "password",
                 $email: 'foo@bar',
+                $secret: 'secret',
                 $otp_key: 'key',
                 $otp_confirmed: false,
             },
@@ -445,14 +457,15 @@ module.exports = {
 
         var ins1 = this.engine.prepare(
             "INSERT INTO"
-          + "   users(login, password, email, otp_key, otp_confirmed)"
-          + "   VALUES($login, $password, $email, $otp_key, $otp_confirmed)"
+          + "   users(login, password, email, secret, otp_key, otp_confirmed)"
+          + "   VALUES($login, $password, $email, $secret, $otp_key, $otp_confirmed)"
         );
         ins1.run(
             {
                 $login: 'login',
                 $password: "password",
                 $email: 'foo@bar',
+                $secret: 'secret',
                 $otp_key: 'key',
                 $otp_confirmed: false,
             },
@@ -504,14 +517,15 @@ module.exports = {
 
         var ins1 = this.engine.prepare(
             "INSERT INTO"
-          + "   users(login, password, email, otp_key, otp_confirmed)"
-          + "   VALUES($login, $password, $email, $otp_key, $otp_confirmed)"
+          + "   users(login, password, email, secret, otp_key, otp_confirmed)"
+          + "   VALUES($login, $password, $email, $secret, $otp_key, $otp_confirmed)"
         );
         ins1.run(
             {
                 $login: 'login',
                 $password: "password",
                 $email: 'foo@bar',
+                $secret: 'secret',
                 $otp_key: 'key',
                 $otp_confirmed: false,
             },
@@ -564,14 +578,15 @@ module.exports = {
 
         var ins = this.engine.prepare(
             "INSERT INTO"
-          + "   users(login, password, email, otp_key, otp_confirmed)"
-          + "   VALUES($login, $password, $email, $otp_key, $otp_confirmed)"
+          + "   users(login, password, email, secret, otp_key, otp_confirmed)"
+          + "   VALUES($login, $password, $email, $secret, $otp_key, $otp_confirmed)"
         );
         ins.run(
             {
                 $login: 'login',
                 $password: "password",
                 $email: 'foo@bar',
+                $secret: 'secret',
                 $otp_key: 'key',
                 $otp_confirmed: false,
             },
@@ -610,14 +625,15 @@ module.exports = {
 
         var ins1 = this.engine.prepare(
             "INSERT INTO"
-          + "   users(login, password, email, otp_key, otp_confirmed)"
-          + "   VALUES($login, $password, $email, $otp_key, $otp_confirmed)"
+          + "   users(login, password, email, secret, otp_key, otp_confirmed)"
+          + "   VALUES($login, $password, $email, $secret, $otp_key, $otp_confirmed)"
         );
         ins1.run(
             {
                 $login: 'login',
                 $password: "password",
                 $email: 'foo@bar',
+                $secret: 'secret',
                 $otp_key: 'key',
                 $otp_confirmed: false,
             },
@@ -668,14 +684,15 @@ module.exports = {
 
         var ins1 = this.engine.prepare(
             "INSERT INTO"
-          + "   users(login, password, email, otp_key, otp_confirmed)"
-          + "   VALUES($login, $password, $email, $otp_key, $otp_confirmed)"
+          + "   users(login, password, email, secret, otp_key, otp_confirmed)"
+          + "   VALUES($login, $password, $email, $secret, $otp_key, $otp_confirmed)"
         );
         ins1.run(
             {
                 $login: 'login',
                 $password: "password",
                 $email: 'foo@bar',
+                $secret: 'secret',
                 $otp_key: 'key',
                 $otp_confirmed: false,
             },
@@ -729,14 +746,15 @@ module.exports = {
 
         var ins1 = this.engine.prepare(
             "INSERT INTO"
-          + "   users(login, password, email, otp_key, otp_confirmed)"
-          + "   VALUES($login, $password, $email, $otp_key, $otp_confirmed)"
+          + "   users(login, password, email, secret, otp_key, otp_confirmed)"
+          + "   VALUES($login, $password, $email, $secret, $otp_key, $otp_confirmed)"
         );
         ins1.run(
             {
                 $login: 'login',
                 $password: "password",
                 $email: 'foo@bar',
+                $secret: 'secret',
                 $otp_key: 'key',
                 $otp_confirmed: false,
             },
@@ -790,14 +808,15 @@ module.exports = {
 
         var ins1 = this.engine.prepare(
             "INSERT INTO"
-          + "   users(login, password, email, otp_key, otp_confirmed)"
-          + "   VALUES($login, $password, $email, $otp_key, $otp_confirmed)"
+          + "   users(login, password, email, secret, otp_key, otp_confirmed)"
+          + "   VALUES($login, $password, $email, $secret, $otp_key, $otp_confirmed)"
         );
         ins1.run(
             {
                 $login: 'login',
                 $password: "password",
                 $email: 'foo@bar',
+                $secret: 'secret',
                 $otp_key: 'key',
                 $otp_confirmed: false,
             },
