@@ -9,6 +9,12 @@
         "RESET_LABEL": "Reset one time password",
         "FIELD_EMPTY": "Value is required and can't be empty",
         "INVALID_LOGIN": "Invalid login or password",
-        "INVALID_OTP": "Invalid code"
+        "INVALID_OTP": "Invalid code",
+        "RESET_PASSWORD_SUBJECT": "Reset password confirmation",
+        "RESET_PASSWORD_TEXT": "",
+        "RESET_PASSWORD_HTML": "",
+        "RESET_OTP_SUBJECT": "Reset password confirmation",
+        "RESET_OTP_TEXT": "",
+        "RESET_OTP_HTML": ""
     }
 }

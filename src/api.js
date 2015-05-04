@@ -273,23 +273,46 @@ Api.prototype.resetRequest = function (sid, req, res) {
     var db = this.sl.get('database'),
         front = this.sl.get('front'),
         email = this.sl.get('email'),
+        globalize = this.sl.get('globalize'),
         query = url.parse(req.url, true),
         type = query.query['type'],
-        email = query.query['email'];
+        email = query.query['email'],
+        lang = query.query['lang'];
 
-    if (typeof type == 'undefined' || typeof email == 'undefined')
+    if (typeof type == 'undefined' || typeof email == 'undefined' || typeof lang == 'undefined')
         return front.returnBadRequest(res);
 
     db.selectUserByEmail(email)
         .then(function (user) {
-            if (!user) {
+            if (!user || !user['email'] || !req.headers.host) {
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: false }));
                 return;
             }
 
+            var gl = globalize.getLocale(lang);
             if (type == 'auth') {
+                if (user['password'] == '* NOT SET *') {
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({
+                        success: false,
+                        reason: 'extern-password',
+                    }));
+                    return;
+                }
+                email.send({
+                    subject:    gl.formatMessage('RESET_PASSWORD_SUBJECT'),
+                    to:         user['email'],
+                    text:       gl.formatMessage('RESET_PASSWORD_TEXT'),
+                    html:       gl.formatMessage('RESET_PASSWORD_HTML'),
+                });
             } else if (type == 'otp') {
+                email.send({
+                    subject:    gl.formatMessage('RESET_OTP_SUBJECT'),
+                    to:         user['email'],
+                    text:       gl.formatMessage('RESET_OTP_TEXT'),
+                    html:       gl.formatMessage('RESET_OTP_HTML'),
+                });
             } else {
                 return front.returnBadRequest(res);
             }
