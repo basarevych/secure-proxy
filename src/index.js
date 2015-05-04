@@ -94,8 +94,10 @@ switch (argv['_'][0]) {
         q.all(bindPromises)
             .then(function () {
                 try {
-                    process.setgid(config['user']);
-                    process.setuid(config['group']);
+                    if (process.getuid() === 0) {
+                        process.setgid(config['user']);
+                        process.setuid(config['group']);
+                    }
                 } catch (err) {
                     console.error(err);
                     process.exit(1);
