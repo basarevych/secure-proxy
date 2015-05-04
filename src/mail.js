@@ -33,10 +33,10 @@ Mail.prototype.send = function (params) {
         defer = q.defer();
 
     var message = {
-       text:    params['text'],
-       from:    params['from'] || config['email']['from'],
-       to:      params['to'],
        subject: params['subject'],
+       to:      params['to'],
+       from:    params['from'] || config['email']['from'],
+       text:    params['text'],
        attachment: [ { data: params['html'], alternative:true }, ],
     };
 
