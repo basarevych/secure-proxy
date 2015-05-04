@@ -268,3 +268,30 @@ Api.prototype.otp = function (sid, req, res) {
             front.returnInternalError(res);
         });
 };
+
+Api.prototype.resetRequest = function (sid, req, res) {
+    var db = this.sl.get('database'),
+        front = this.sl.get('front'),
+        email = this.sl.get('email'),
+        query = url.parse(req.url, true),
+        type = query.query['type'],
+        email = query.query['email'];
+
+    if (typeof type == 'undefined' || typeof email == 'undefined')
+        return front.returnBadRequest(res);
+
+    db.selectUserByEmail(email)
+        .then(function (user) {
+            if (!user) {
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false }));
+                return;
+            }
+
+            if (type == 'auth') {
+            } else if (type == 'otp') {
+            } else {
+                return front.returnBadRequest(res);
+            }
+        });
+};

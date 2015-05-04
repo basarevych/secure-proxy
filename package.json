@@ -20,7 +20,9 @@
   "dependencies": {
     "bcrypt": "~0.8.2",
     "bower": "~1.4.1",
+    "cldr-data": "^27.0.5",
     "emailjs": "^0.3.16",
+    "globalize": "^1.0.0",
     "http-proxy": "~1.11.1",
     "locale": "~0.0.20",
     "minimist": "~1.1.1",
