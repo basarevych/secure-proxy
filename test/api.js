@@ -132,7 +132,7 @@ module.exports = {
             });
     },
 
-    testAuthValidPassword: function (test) {
+    testAuthCheckValidPassword: function (test) {
         var me = this;
 
         var req = {
@@ -163,7 +163,7 @@ module.exports = {
             });
     },
 
-    testAuthInvalidPassword: function (test) {
+    testAuthCheckInvalidPassword: function (test) {
         var me = this;
 
         var req = {
@@ -184,6 +184,44 @@ module.exports = {
 
         this.db.createUser('login', 'other password', 'foo@bar')
             .then(function () {
+                me.api.auth('sid', req, res);
+            });
+    },
+
+    testAuthSet: function (test) {
+        var me = this;
+
+        var req = {
+            headers: {},
+            url: '/secure-proxy/api/auth?action=set&login=login&password=password&secret=foobar',
+        };
+
+        var oldSecret;
+        var res = {
+            writeHead: function (code, headers) {
+            },
+            end: function (html) {
+                me.db.selectUser('login')
+                    .then(function (user) {
+                        me.db.checkUserPassword('login', 'password')
+                            .then(function (match) {
+                                var result = JSON.parse(html);
+                                test.ok(typeof result['success'] != 'undefined', "success is not returned");
+                                test.equal(result['success'], true, "success is incorrect");
+                                test.notEqual(user['secret'], oldSecret, "secret was not changed");
+                                test.ok(match, "New password is wrong");
+                                test.done();
+                            });
+                    });
+            }
+        };
+
+        this.db.createUser('login', 'old password', 'foo@bar')
+            .then(function () { return me.db.createSession('login', 'sid'); })
+            .then(function () { return me.db.selectUser('login'); })
+            .then(function (user) {
+                oldSecret = user['secret'];
+                req.url = '/secure-proxy/api/auth?action=set&login=login&password=password&secret=' + user['secret'],
                 me.api.auth('sid', req, res);
             });
     },
@@ -305,7 +343,7 @@ module.exports = {
             });
     },
 
-    testOtpCheckIncorrectPassword: function (test) {
+    testOtpCheckIncorrectCode: function (test) {
         var me = this;
 
         var req = {
