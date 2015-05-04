@@ -11,6 +11,13 @@ module.exports = {
         name: 'Secure Proxy',       // Google Authenticator account name
     },                              // (will be visible to user)
 
+    email: {
+        host: '127.0.0.1',          // SMTP server
+        port: 25,
+        ssl: false,
+        from: 'www@localhost',      // 'From' header of email sent by proxy
+    },
+
     ssl: {                          // Ignored if HTTPS is not enabled
         key: '/etc/certs/server.unencrypted.key',
         cert: '/etc/certs/server.crt',
