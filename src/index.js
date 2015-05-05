@@ -32,6 +32,8 @@ if (argv['_'].length == 0
     console.log("\n\tAt least one -h or -s option must be provided");
     console.log("\n'list-users' options:");
     console.log("\t-e, --email=name@host\tOptional. Limit query to this email");
+    console.log("\n'list-sessions' options:");
+    console.log("\t-l, --login=name\tOptional. Limit query to this login");
     console.log("");
     return;
 }
@@ -123,7 +125,8 @@ switch (argv['_'][0]) {
         break;
 
     case 'list-sessions':
-        cons.listSessions();
+        var login = argv['l'] ? argv['l'] : argv['login'];
+        cons.listSessions(login);
         break;
 
     case 'delete-session':

@@ -112,12 +112,17 @@ Console.prototype.deleteUser = function () {
     });
 };
 
-Console.prototype.listSessions = function () {
+Console.prototype.listSessions = function (login) {
     var db = this.getDatabase(),
         rl = this.getReadline();
 
-    rl.write("==> Session list\n");
-    db.selectSessions()
+    rl.write(login ? "==> Session list (" + login + ")\n" : "==> Session list\n");
+
+    var params = {};
+    if (login)
+        params['login'] = login;
+
+    db.selectSessions(params)
         .then(function (sessions) {
             for (var i = 0; i < sessions.length; i++) {
                 var date = new Date(sessions[i]['last']);

@@ -200,6 +200,35 @@ module.exports = {
             });
     },
 
+    testListSessionsByLogin: function (test) {
+        var me = this;
+
+        this.db.createUser('login', 'password', 'foo@bar')
+            .then(function () { return me.db.createUser('login2', 'password2', 'foo@bar2'); })
+            .then(function () { return me.db.createSession('login', 'sid'); })
+            .then(function () { return me.db.createSession('login2', 'sid2'); })
+            .then(function () { return me.db.selectSession('sid'); })
+            .then(function (session) {
+                var output = [];
+                me.cons.rl = { 
+                    write: function (line) {
+                        var sublines = line.split("\n");
+                        for (var i = 0; i < sublines.length; i++)
+                            output.push(sublines[i]);
+                    },
+                    close: function () {
+                        test.equal(checkArray(output, /ID:\s+1$/), true, "id is missing");
+                        test.equal(checkArray(output, /Login:\s+login$/), true, "login is missing");
+                        test.equal(checkArray(output, /SID:\s+sid$/), true, "sid is missing");
+                        test.equal(checkArray(output, /password:\s+false$/), true, "password is missing");
+                        test.equal(checkArray(output, /OTP:\s+false$/), true, "otp is missing");
+                        test.done();
+                    }
+                };
+                me.cons.listSessions('login');
+            });
+    },
+
     testDeleteSession: function (test) {
         var me = this;
 

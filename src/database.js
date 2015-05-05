@@ -484,19 +484,29 @@ Database.prototype.selectSession = function (sid) {
     return defer.promise;
 };
 
-Database.prototype.selectSessions = function () {
+Database.prototype.selectSessions = function (params) {
     var engine = this.getEngine(),
         defer = q.defer();
 
-    var sel = engine.prepare(
-        "SELECT s.id, s.user_id, u.login, s.sid, s.last, s.auth_password, s.auth_otp"
+    var bind = {}, where = [];
+    if (typeof params != 'undefined') {
+        if (typeof params['login'] != 'undefined') {
+            bind['$login'] = params['login'];
+            where.push(" login = $login");
+        }
+    }
+
+    var sql = "SELECT s.id, s.user_id, u.login, s.sid, s.last, s.auth_password, s.auth_otp"
       + "   FROM sessions s"
       + "   LEFT JOIN users u"
-      + "       ON s.user_id = u.id"
-      + "   ORDER BY s.id ASC"
-    );
+      + "       ON s.user_id = u.id";
+    if (where.length)
+        sql += " WHERE " + where.join(' AND ');
+    sql += " ORDER BY s.id ASC";
+
+    var sel = engine.prepare(sql);
     sel.all(
-        { },
+        bind,
         function (err, rows) {
             if (err) {
                 defer.reject(err);
