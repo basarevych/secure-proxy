@@ -10,6 +10,7 @@ var fs              = require('fs'),
     Database        = require('./database.js'),
     Front           = require('./front.js'),
     Api             = require('./api.js'),
+    Globalize       = require('./globalize.js'),
     Console         = require('./console.js');
 
 var httpOption = argv['h'] ? argv['h'] : argv['http'],
@@ -37,6 +38,7 @@ var sl          = new ServiceLocator(),
     db          = new Database(sl),
     front       = new Front(sl),
     api         = new Api(sl),
+    globalize   = new Globalize(sl),
     cons        = new Console(sl),
     config      = sl.get('config');
 

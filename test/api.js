@@ -5,7 +5,8 @@ var q               = require('q'),
     ServiceLocator  = require('../src/service-locator.js'),
     Database        = require('../src/database.js'),
     Front           = require('../src/front.js'),
-    Api             = require('../src/api.js');
+    Api             = require('../src/api.js'),
+    Globalize       = require('../src/globalize.js');
 
 module.exports = {
     setUp: function (callback) {
@@ -13,6 +14,7 @@ module.exports = {
         this.db = new Database(this.sl);
         this.front = new Front(this.sl);
         this.api = new Api(this.sl);
+        this.globalize = new Globalize(this.sl);
 
         this.db.dbFile = ":memory:";
 

@@ -16,16 +16,16 @@ module.exports = Api;
 
 Api.prototype.locale = function (sid, req, res) {
     var front = this.sl.get('front'),
+        globalize = this.sl.get('globalize'),
         config = this.sl.get('config'),
         query = url.parse(req.url, true),
         setLocale = query.query['set'],
         cookies = front.parseCookies(req),
         localeCookie = cookies[config['namespace'] + 'locale'],
-        supported = [ 'en', 'ru' ],
         locales = new locale.Locales(req.headers["accept-language"])
 
     var result = null;
-    if (typeof setLocale != 'undefined' && supported.indexOf(setLocale) != -1) {
+    if (typeof setLocale != 'undefined' && globalize.supportedLocales.indexOf(setLocale) != -1) {
         result = setLocale;
 
         var header = config['namespace'] + 'locale=' + result + '; path=/';
@@ -33,10 +33,10 @@ Api.prototype.locale = function (sid, req, res) {
     }
 
     if (!result) {
-        if (typeof localeCookie != 'undefined' && supported.indexOf(localeCookie) != -1)
+        if (typeof localeCookie != 'undefined' && globalize.supportedLocales.indexOf(localeCookie) != -1)
             result = localeCookie;
         else
-            result = locales.best(new locale.Locales(supported));
+            result = locales.best(new locale.Locales(globalize.supportedLocales));
     }
 
     res.writeHead(200, { 'Content-Type': 'application/json' });

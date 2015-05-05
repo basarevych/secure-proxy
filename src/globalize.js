@@ -3,6 +3,7 @@
 function Globalize(serviceLocator) {
     this.sl = serviceLocator;
     this.locales = [];
+    this.supportedLocales = [ 'en', 'ru' ],
 
     this.sl.set('globalize', this);
 }
@@ -10,6 +11,9 @@ function Globalize(serviceLocator) {
 module.exports = Globalize;
 
 Globalize.prototype.getLocale = function (locale) {
+    if (this.supportedLocales.indexOf(locale) == -1)
+        throw new Error('Unsupported locale');
+
     if (typeof this.locales[locale] != 'undefined')
         return this.locales[locale];
 
