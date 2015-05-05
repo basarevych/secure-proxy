@@ -153,8 +153,9 @@ module.exports = {
                 test.equal(result['success'], true, "success is incorrect");
                 test.ok(typeof result['next'] != 'undefined', "next is not returned");
                 test.equal(result['next'], 'otp', "next is not set to otp");
-                me.db.selectSession('sid')
-                    .then(function (session) {
+                me.db.selectSessions({ sid: 'sid' })
+                    .then(function (sessions) {
+                        var session = sessions.length && sessions[0];
                         test.equal(session['auth_password'], true, "auth_password is not set");
                         test.done();
                     });
@@ -205,8 +206,9 @@ module.exports = {
             writeHead: function (code, headers) {
             },
             end: function (html) {
-                me.db.selectUser('login')
-                    .then(function (user) {
+                me.db.selectUsers({ login: 'login' })
+                    .then(function (users) {
+                        var user = users.length && users[0];
                         me.db.checkUserPassword('login', 'password')
                             .then(function (match) {
                                 var result = JSON.parse(html);
@@ -222,8 +224,9 @@ module.exports = {
 
         this.db.createUser('login', 'old password', 'foo@bar')
             .then(function () { return me.db.createSession('login', 'sid'); })
-            .then(function () { return me.db.selectUser('login'); })
-            .then(function (user) {
+            .then(function () { return me.db.selectUsers({ login: 'login' }); })
+            .then(function (users) {
+                var user = users.length && users[0];
                 oldSecret = user['secret'];
                 req.url = '/secure-proxy/api/auth?action=set&login=login&password=password&secret=' + user['secret'],
                 me.api.auth('sid', req, res);
@@ -271,8 +274,9 @@ module.exports = {
             },
             end: function (html) {
                 var result = JSON.parse(html);
-                me.db.selectUser('login')
-                    .then(function (user) {
+                me.db.selectUsers({ login: 'login' })
+                    .then(function (users) {
+                        var user = users.length && users[0];
                         test.ok(typeof result['qr_code'] != 'undefined', "qr_code is not returned");
                         test.equal(result['qr_code'], 'otpauth://totp/Example?secret=' + user['otp_key'], "Wrong qr_code");
                         test.done();
@@ -339,8 +343,9 @@ module.exports = {
         this.db.createUser('login', 'password', 'foo@bar')
             .then(function () { return me.db.createSession('login', 'sid'); })
             .then(function () { return me.db.setSessionPassword('sid', true); })
-            .then(function () { return me.db.selectUser('login'); })
-            .then(function (user) {
+            .then(function () { return me.db.selectUsers({ login: 'login' }); })
+            .then(function (users) {
+                var user = users.length && users[0];
                 var correct = speakeasy.time({ key: user['otp_key'], encoding: 'base32' });
                 req.url = '/secure-proxy/api/otp?action=check&otp=' + correct;
                 me.api.otp('sid', req, res);
@@ -387,8 +392,9 @@ module.exports = {
             writeHead: function (code, headers) {
             },
             end: function (html) {
-                me.db.selectUser('login')
-                    .then(function (user) {
+                me.db.selectUsers({ login: 'login' })
+                    .then(function (users) {
+                        var user = users.length && users[0];
                         var result = JSON.parse(html);
                         test.ok(typeof result['success'] != 'undefined', "success is not returned");
                         test.equal(result['success'], true, "success is incorrect");
@@ -403,8 +409,9 @@ module.exports = {
             .then(function () { return me.db.setUserOtpConfirmed('login', true); })
             .then(function () { return me.db.createSession('login', 'sid'); })
             .then(function () { return me.db.setSessionPassword('sid', true); })
-            .then(function () { return me.db.selectUser('login'); })
-            .then(function (user) {
+            .then(function () { return me.db.selectUsers({ login: 'login' }); })
+            .then(function (users) {
+                var user = users.length && users[0];
                 oldSecret = user['secret'];
                 req.url = '/secure-proxy/api/otp?action=reset&secret=' + user['secret'];
                 me.api.otp('sid', req, res);
@@ -428,7 +435,7 @@ module.exports = {
             headers: {},
             url: 'http://localhost:8000/secure-proxy/api/reset-request?type=password'
                 + '&email=' + encodeURIComponent('foo@bar')
-                + '&lang=en'
+                + '&lang=en&url=' + encodeURIComponent('http://localhost/'),
         };
 
         var res = {
@@ -467,7 +474,7 @@ module.exports = {
             headers: {},
             url: 'http://localhost:8000/secure-proxy/api/reset-request?type=otp'
                 + '&email=' + encodeURIComponent('foo@bar')
-                + '&lang=en'
+                + '&lang=en&url=' + encodeURIComponent('http://localhost/'),
         };
 
         var res = {

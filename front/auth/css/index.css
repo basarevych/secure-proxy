@@ -39,7 +39,7 @@ body {
     content: '\e090';
 }
 
-#login-form {
+#login-form, #password-form {
     display: none;
     background-color: #ffffff;
     border: 1px solid #999999;
@@ -54,6 +54,6 @@ body {
 .localization .language {
     margin-left: 15px;
 }
-#login-messages, #otp-messages {
+#reset-messages, #login-messages, #otp-messages, #password-messages {
     text-align: center;
 }

@@ -28,6 +28,40 @@
         <script src="/secure-proxy/static/auth/js/handlers.js"></script>
     </head>
     <body>
+        <div id="modal-form" class="modal">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        <h4 id="modal-title" class="modal-title"></h4>
+                    </div>
+                    <div class="modal-body">
+                        <form class="form-horizontal" onsubmit="return false">
+                            <div id="reset-messages"></div>
+                            <div class="form-group">
+                                <label id="email-label" class="col-sm-4 control-label" for="email"></label>
+                                <div class="col-sm-8">
+                                    <input class="form-control" type="text" name="email" id="email"
+                                           data-on-blur="validateFormField($('input[name=email]'))"
+                                           data-on-enter="$('#modal-submit').focus().click()">
+                                    <div class="help-block">
+                                        <ul class="list-unstyled icon-list error-list">
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button id="modal-close" type="button" class="btn btn-default" data-dismiss="modal">
+                        </button>
+                        <button id="modal-submit" type="button" class="btn btn-primary">
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="centered-wrapper">
             <div class="centered">
                 <div id="login-form" class="col-xs-offset-1 col-xs-10 col-sm-offset-2 col-sm-8 col-md-offset-3 col-md-6">
@@ -46,6 +80,7 @@
                             <label id="login-label" class="col-sm-4 control-label" for="login"></label>
                             <div class="col-sm-8">
                                 <input class="form-control" type="text" name="login" id="login"
+                                       onkeydown="$('#login-messages').empty()"
                                        data-on-blur="validateFormField($('input[name=login]'))"
                                        data-on-enter="$('input[name=password]').focus()">
                                 <div class="help-block">
@@ -59,6 +94,7 @@
                             <label id="password-label" class="col-sm-4 control-label" for="password"></label>
                             <div class="col-sm-8">
                                 <input class="form-control" type="password" name="password" id="password"
+                                       onkeydown="$('#login-messages').empty()"
                                        data-on-blur="validateFormField($('input[name=password]'))"
                                        data-on-enter="submitPassword()">
                                 <div class="help-block">
@@ -71,6 +107,8 @@
                         <div class="form-group">
                             <div class="col-sm-offset-4 col-sm-8">
                                 <button id="submit-password-button" class="btn btn-default" type="submit" onclick="submitPassword()"></button>
+                                &nbsp;&nbsp;&nbsp;
+                                <a id="reset-password-button" href="javascript:resetPassword()"></a>
                             </div>
                         </div>
 
@@ -89,6 +127,7 @@
                                 <label id="otp-label" class="col-sm-4 control-label" for="otp"></label>
                                 <div class="col-sm-8">
                                     <input class="form-control" type="text" name="otp" id="otp"
+                                           onkeydown="$('#otp-messages').empty()"
                                            data-on-blur="validateFormField($('input[name=otp]'))"
                                            data-on-enter="submitOtp()">
                                     <div class="help-block">
@@ -109,9 +148,11 @@
             </div>
         </div>
         <script>
-            var gl = null;
+            var gl = null, currectLocale = null;
 
             function loadLocale(locale) {
+                currentLocale = locale;
+
                 var form = $('#login-form');
                 if (form.css('display') != 'none')
                     form.hide();
@@ -142,14 +183,21 @@
             }
 
             function initPage() {
+                $('#email-label').text(gl.formatMessage('EMAIL_LABEL') + ':');
+                $('#modal-close').text(gl.formatMessage('CLOSE_LABEL'));
+                $('#modal-close').text(gl.formatMessage('CLOSE_LABEL'));
+                $('#modal-submit').text(gl.formatMessage('SUBMIT_LABEL'));
+
                 $('#page-title').text(gl.formatMessage('PAGE_TITLE'));
                 $('#login-label').text(gl.formatMessage('USERNAME_LABEL') + ':');
                 $('#password-label').text(gl.formatMessage('PASSWORD_LABEL') + ':');
                 $('#submit-password-button').text(gl.formatMessage('SUBMIT_LABEL'));
+                $('#reset-password-button').text(gl.formatMessage('RESET_PASSWORD_LABEL'));
                 $('#qr-label').text(gl.formatMessage('QR_LABEL'));
                 $('#otp-label').text(gl.formatMessage('OTP_LABEL'));
                 $('#reset-label').text(gl.formatMessage('RESET_LABEL'));
                 $('#submit-otp-button').text(gl.formatMessage('SUBMIT_LABEL'));
+
                 $('#login-form .form-group').removeClass('has-error');
                 $('#login-form .help-block ul').empty();
                 $('#login-form').slideDown(function () { $('#login').focus() });
@@ -173,6 +221,7 @@
                     url: '/secure-proxy/api/auth',
                     method: 'GET',
                     data: {
+                        action: 'check',
                         login: $('#login').val(),
                         password: $('#password').val(),
                     },
@@ -227,6 +276,59 @@
                         }
                     }
                 });
+            }
+
+            function resetPassword() {
+                var messages = $('#reset-messages');
+                messages.empty();
+                $('#email').val(''),
+                $('#modal-form .form-group').removeClass('has-error');
+                $('#modal-form .help-block ul').empty();
+
+                $('#modal-submit')
+                    .off('click')
+                    .on('click', function () {
+                        messages.empty();
+
+                        var email = validateFormField($('#email'));
+
+                        if (!email) {
+                            $('#email').focus();
+                            return;
+                        }
+
+                        $('#modal-submit').addClass('disabled').prop('disabled', true);
+                        $.ajax({
+                            url: '/secure-proxy/api/reset-request',
+                            method: 'GET',
+                            data: {
+                                type: 'password',
+                                email: $('#email').val(),
+                                lang: currentLocale,
+                                url: window.location.toString(),
+                            },
+                            success: function (data) {
+                                if (data.success) {
+                                    var msg = $('<div></div>');
+                                    msg.addClass('alert alert-success')
+                                       .text(gl.formatMessage('EMAIL_SENT'))
+                                       .appendTo(messages);
+                                } else {
+                                    var extern = data.reason && data.reason == 'extern-password';
+                                    var msg = $('<div></div>');
+                                    msg.addClass('alert alert-danger')
+                                       .text(gl.formatMessage(extern ? 'EXTERN_PASSWORD' : 'INVALID_EMAIL'))
+                                       .appendTo(messages);
+                                    $('#modal-submit').removeClass('disabled').prop('disabled', false);
+                                }
+                            },
+                        });
+                    });
+
+                $('#modal-title').text(gl.formatMessage('RESET_PASSWORD_TITLE'));
+                $('#modal-submit').removeClass('disabled').prop('disabled', false);
+                $('#modal-form').modal('show');
+                $('#email').focus();
             }
 
             function submitOtp() {

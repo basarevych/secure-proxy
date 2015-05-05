@@ -80,22 +80,22 @@ Api.prototype.auth = function (sid, req, res) {
         password = query.query['password'],
         secret = query.query['secret'];
 
-    if (typeof sid == 'undefined' || typeof action == 'undefined'
-            || typeof login == 'undefined' || typeof password == 'undefined') {
+    if (typeof sid == 'undefined' || typeof action == 'undefined' || typeof password == 'undefined')
         return front.returnBadRequest(res);
-    }
 
     if (action == 'check') {
+        if (typeof login == 'undefined')
+            return front.returnBadRequest(res);
+
         db.checkUserPassword(login, password)
             .then(function (match) {
                 if (match) {
-                    db.selectSession(sid)
-                        .then(function (session) {
+                    db.selectSessions({ sid: sid })
+                        .then(function (sessions) {
+                            var session = sessions.length && sessions[0];
                             var defer = q.defer();
 
-                            if (typeof session == 'undefined') {
-                                defer.resolve();
-                            } else {
+                            if (session) {
                                 db.deleteSession(sid)
                                     .then(function () {
                                         defer.resolve();
@@ -104,6 +104,8 @@ Api.prototype.auth = function (sid, req, res) {
                                         console.error(err);
                                         front.returnInternalError(res);
                                     });
+                            } else {
+                                defer.resolve();
                             }
 
                             defer.promise
@@ -135,9 +137,10 @@ Api.prototype.auth = function (sid, req, res) {
         if (typeof secret == 'undefined')
             return front.returnBadRequest(res);
 
-        db.selectUser(login)
-            .then(function (user) {
-                if (secret == user['secret']) {
+        db.selectUsers({ login: login })
+            .then(function (users) {
+                var user = users.length && users[0];
+                if (user && user['password'] != '* NOT SET *' && user['secret'] == secret) {
                     db.setUserPassword(login, password)
                         .then(function () { return db.generateUserSecret(login); })
                         .then(function () {
@@ -175,8 +178,9 @@ Api.prototype.otp = function (sid, req, res) {
     if (typeof sid == 'undefined' || typeof action == 'undefined')
         return front.returnBadRequest(res);
 
-    db.selectSession(sid)
-        .then(function (session) {
+    db.selectSessions({ sid: sid })
+        .then(function (sessions) {
+            var session = sessions.length && sessions[0];
             if (!session || !session.auth_password) {
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({
@@ -187,8 +191,9 @@ Api.prototype.otp = function (sid, req, res) {
             }
 
             if (action == 'get') {
-                db.selectUser(session['login'])
-                    .then(function (user) {
+                db.selectUsers({ login: session['login'] })
+                    .then(function (users) {
+                        var user = users.length && users[0];
                         var result = { success: true };
                         if (!user['otp_confirmed']) {
                             result['qr_code'] = 'otpauth://totp/'
@@ -235,8 +240,9 @@ Api.prototype.otp = function (sid, req, res) {
                 if (typeof secret == 'undefined')
                     return front.returnBadRequest(res);
 
-                db.selectUser(session['login'])
-                    .then(function (user) {
+                db.selectUsers({ login: session['login'] })
+                    .then(function (users) {
+                        var user = users.length && users[0];
                         if (secret == user['secret']) {
                             db.setUserOtpConfirmed(session['login'], false)
                                 .then(function () { return db.generateUserOtpKey(session['login']); })
@@ -277,9 +283,11 @@ Api.prototype.resetRequest = function (sid, req, res) {
         query = url.parse(req.url, true),
         type = query.query['type'],
         userEmail = query.query['email'],
-        lang = query.query['lang'];
+        lang = query.query['lang'],
+        currentUrl = query.query['url'],
+        currentQuery = url.parse(currentUrl, true);
 
-    if (typeof type == 'undefined' || typeof email == 'undefined' || typeof lang == 'undefined')
+    if (typeof type == 'undefined' || typeof email == 'undefined' || typeof lang == 'undefined' || typeof url == 'undefined')
         return front.returnBadRequest(res);
 
     if (globalize.supportedLocales.indexOf(lang) == -1)
@@ -287,7 +295,7 @@ Api.prototype.resetRequest = function (sid, req, res) {
 
     var gl = globalize.getLocale(lang);
     if (type == 'password') {
-        db.selectUsers(userEmail)
+        db.selectUsers({ email: userEmail })
             .then(function (users) {
                 var externPassword = false, promises = [];
                 users.forEach(function (user) {
@@ -296,12 +304,12 @@ Api.prototype.resetRequest = function (sid, req, res) {
                         return;
                     }
 
-                    var link = query.protocol + '//' + query.host + '/secure-proxy/static/auth/reset-password.html#' + user['secret'];
+                    var link = currentQuery.protocol + '//' + currentQuery.host + '/secure-proxy/static/auth/reset-password.html#' + user['secret'];
                     promises.push(email.send({
                         subject:    gl.formatMessage('RESET_PASSWORD_SUBJECT'),
                         to:         user['email'],
-                        text:       gl.formatMessage('RESET_PASSWORD_TEXT', { host: query.hostname, link: link }),
-                        html:       gl.formatMessage('RESET_PASSWORD_HTML', { host: query.hostname, link: link }),
+                        text:       gl.formatMessage('RESET_PASSWORD_TEXT', { host: currentQuery.hostname, link: link }),
+                        html:       gl.formatMessage('RESET_PASSWORD_HTML', { host: currentQuery.hostname, link: link }),
                     }));
                 });
 
@@ -320,16 +328,16 @@ Api.prototype.resetRequest = function (sid, req, res) {
                     });
             });
     } else if (type == 'otp') {
-        db.selectUsers(userEmail)
+        db.selectUsers({ email: userEmail })
             .then(function (users) {
                 var promises = [];
                 users.forEach(function (user) {
-                    var link = query.protocol + '//' + query.host + '/secure-proxy/static/auth/reset-otp.html#' + user['secret'];
+                    var link = currentQuery.protocol + '//' + currentQuery.host + '/secure-proxy/static/auth/reset-otp.html#' + user['secret'];
                     promises.push(email.send({
                         subject:    gl.formatMessage('RESET_OTP_SUBJECT'),
                         to:         user['email'],
-                        text:       gl.formatMessage('RESET_OTP_TEXT', { host: query.hostname, link: link }),
-                        html:       gl.formatMessage('RESET_OTP_HTML', { host: query.hostname, link: link }),
+                        text:       gl.formatMessage('RESET_OTP_TEXT', { host: currentQuery.hostname, link: link }),
+                        html:       gl.formatMessage('RESET_OTP_HTML', { host: currentQuery.hostname, link: link }),
                     }));
                 });
 

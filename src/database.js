@@ -85,41 +85,23 @@ Database.prototype.userExists = function (login) {
     return defer.promise;
 };
 
-Database.prototype.selectUser = function (login) {
-    var engine = this.getEngine(),
-        defer = q.defer();
-
-    var sel = engine.prepare(
-        "SELECT *"
-      + "   FROM users"
-      + "   WHERE login = $login"
-    );
-    sel.get(
-        {
-            $login: login
-        },
-        function (err, row) {
-            if (err) {
-                defer.reject(err);
-                return;
-            }
-            defer.resolve(row);
-        }
-    );
-    sel.finalize();
-
-    return defer.promise;
-};
-
 Database.prototype.selectUsers = function (params) {
     var engine = this.getEngine(),
         defer = q.defer();
 
     var bind = {}, where = [];
     if (typeof params != 'undefined') {
+        if (typeof params['login'] != 'undefined') {
+            bind['$login'] = params['login'];
+            where.push(" login = $login");
+        }
         if (typeof params['email'] != 'undefined') {
             bind['$email'] = params['email'];
             where.push(" email = $email");
+        }
+        if (typeof params['secret'] != 'undefined') {
+            bind['$secret'] = params['secret'];
+            where.push(" secret = $secret");
         }
     }
 
@@ -262,9 +244,10 @@ Database.prototype.checkUserPassword = function (login, password) {
     var engine = this.getEngine(),
         defer = q.defer();
 
-    this.selectUser(login)
-        .then(function (user) {
-            if (typeof user == 'undefined') {
+    this.selectUsers({ login: login })
+        .then(function (users) {
+            var user = users.length && users[0];
+            if (!user) {
                 defer.resolve(false);
                 return;
             }
@@ -387,9 +370,10 @@ Database.prototype.checkUserOtpKey = function (login, otp) {
     var engine = this.getEngine(),
         defer = q.defer();
 
-    this.selectUser(login)
-        .then(function (user) {
-            if (typeof user == 'undefined') {
+    this.selectUsers({ login: login })
+        .then(function (users) {
+            var user = users.length && users[0];
+            if (!user) {
                 defer.resolve(false);
                 return;
             }
@@ -456,43 +440,15 @@ Database.prototype.sessionExists = function (sid) {
     return defer.promise;
 };
 
-Database.prototype.selectSession = function (sid) {
-    var engine = this.getEngine(),
-        defer = q.defer();
-
-    var sel = engine.prepare(
-        "SELECT s.id, s.user_id, u.login, s.sid, s.last, s.auth_password, s.auth_otp"
-      + "   FROM sessions s"
-      + "   LEFT JOIN users u"
-      + "       ON s.user_id = u.id"
-      + "   WHERE s.sid = $sid"
-    );
-    sel.get(
-        {
-            $sid: sid
-        },
-        function (err, row) {
-            if (err) {
-                defer.reject(err);
-                return;
-            }
-            defer.resolve(row);
-        }
-    );
-    sel.finalize();
-
-    return defer.promise;
-};
-
 Database.prototype.selectSessions = function (params) {
     var engine = this.getEngine(),
         defer = q.defer();
 
     var bind = {}, where = [];
     if (typeof params != 'undefined') {
-        if (typeof params['login'] != 'undefined') {
-            bind['$login'] = params['login'];
-            where.push(" login = $login");
+        if (typeof params['sid'] != 'undefined') {
+            bind['$sid'] = params['sid'];
+            where.push(" s.sid = $sid");
         }
     }
 
@@ -525,8 +481,14 @@ Database.prototype.createSession = function (login, sid) {
         defer = q.defer(),
         now = new Date().getTime();
 
-    this.selectUser(login)
-        .then(function (user) {
+    this.selectUsers({ login: login })
+        .then(function (users) {
+            var user = users.length && users[0];
+            if (!user) {
+                defer.reject("No such user: " + login);
+                return;
+            }
+
             var ins = engine.prepare(
                 "INSERT INTO"
               + "   sessions(user_id, sid, last, auth_password, auth_otp)"

@@ -52,47 +52,6 @@ module.exports = {
         ins.finalize();
     },
 
-    testSelectUser: function (test) {
-        var me = this;
-
-        var ins = this.engine.prepare(
-            "INSERT INTO"
-          + "   users(login, password, email, secret, otp_key, otp_confirmed)"
-          + "   VALUES($login, $password, $email, $secret, $otp_key, $otp_confirmed)"
-        );
-        ins.run(
-            {
-                $login: 'login',
-                $password: "password",
-                $email: 'foo@bar',
-                $secret: 'secret',
-                $otp_key: 'key',
-                $otp_confirmed: false,
-            },
-            function (err) {
-                test.ifError(err);
-                me.db.selectUser('login')
-                    .then(function (user) {
-                        test.deepEqual(
-                            user,
-                            {
-                                id: 1,
-                                login: 'login',
-                                password: 'password',
-                                email: 'foo@bar',
-                                secret: 'secret',
-                                otp_key: 'key',
-                                otp_confirmed: false,
-                            },
-                            "Wrong data returned"
-                        );
-                        test.done();
-                    });
-            }
-        );
-        ins.finalize();
-     },
-
     testSelectUsers: function (test) {
         var me = this;
 
@@ -442,66 +401,6 @@ module.exports = {
                                         test.equal(exists, false, "Session reported as existing");
                                         test.done();
                                     });
-                            });
-                    }
-                );
-                ins2.finalize();
-            }
-        );
-        ins1.finalize();
-    },
-
-    testSelectSession: function (test) {
-        var me = this,
-            time = new Date().getTime();
-
-        var ins1 = this.engine.prepare(
-            "INSERT INTO"
-          + "   users(login, password, email, secret, otp_key, otp_confirmed)"
-          + "   VALUES($login, $password, $email, $secret, $otp_key, $otp_confirmed)"
-        );
-        ins1.run(
-            {
-                $login: 'login',
-                $password: "password",
-                $email: 'foo@bar',
-                $secret: 'secret',
-                $otp_key: 'key',
-                $otp_confirmed: false,
-            },
-            function (err) {
-                test.ifError(err);
-                var ins2 = me.engine.prepare(
-                    "INSERT INTO"
-                  + "   sessions(user_id, sid, last, auth_password, auth_otp)"
-                  + "   VALUES($user_id, $sid, $last, $auth_password, $auth_otp)"
-                );
-                ins2.run(
-                    {
-                        $user_id: 1,
-                        $sid: 'sid',
-                        $last: time,
-                        $auth_password: false,
-                        $auth_otp: false,
-                    },
-                    function (err) {
-                        test.ifError(err);
-                        me.db.selectSession('sid')
-                            .then(function (session) {
-                                test.deepEqual(
-                                    session,
-                                    {
-                                        id: 1,
-                                        user_id: 1,
-                                        login: 'login',
-                                        sid: 'sid',
-                                        last: time,
-                                        auth_password: false,
-                                        auth_otp: false
-                                    },
-                                    "Wrong data returned"
-                                );
-                                test.done();
                             });
                     }
                 );

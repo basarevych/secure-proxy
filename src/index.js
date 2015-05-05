@@ -10,6 +10,7 @@ var fs              = require('fs'),
     Database        = require('./database.js'),
     Front           = require('./front.js'),
     Api             = require('./api.js'),
+    Email           = require('./email.js'),
     Globalize       = require('./globalize.js'),
     Console         = require('./console.js');
 
@@ -34,6 +35,7 @@ var sl          = new ServiceLocator(),
     db          = new Database(sl),
     front       = new Front(sl),
     api         = new Api(sl),
+    email       = new Email(sl),
     globalize   = new Globalize(sl),
     cons        = new Console(sl),
     config      = sl.get('config');

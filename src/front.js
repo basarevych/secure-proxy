@@ -83,8 +83,10 @@ Front.prototype.requestListener = function (req, res) {
     if (typeof sid == 'undefined')
         sid = cookies[config['namespace'] + 'sid'],
 
-    db.selectSession(sid)
-        .then(function (session) {
+    db.selectSessions({ sid: sid })
+        .then(function (sessions) {
+            var session = sessions.length && sessions[0];
+
             var isAuthenticated = false;
             if (session) {
                 if (config['otp']['enable'])
@@ -113,6 +115,8 @@ Front.prototype.requestListener = function (req, res) {
                             return api.auth(sid, req, res);
                         case 'otp':
                             return api.otp(sid, req, res);
+                        case 'reset-request':
+                            return api.resetRequest(sid, req, res);
                         default:
                             return me.returnNotFound(res);
                     }

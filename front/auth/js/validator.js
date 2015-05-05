@@ -3,20 +3,8 @@ function validateFormField(element) {
     var value = element.val();
 
     var errors = [];
-    switch (name) {
-        case 'login':
-            if (value.trim() == '')
-                errors.push('FIELD_EMPTY');
-            break;
-        case 'password':
-            if (value.trim() == '')
-                errors.push('FIELD_EMPTY');
-            break;
-        case 'otp':
-            if (value.trim() == '')
-                errors.push('FIELD_EMPTY');
-            break;
-    }
+    if (value.trim() == '')
+        errors.push('FIELD_EMPTY');
 
     var gl = window['globalize'],
         formGroup = element.closest('.form-group'),

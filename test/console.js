@@ -24,8 +24,9 @@ module.exports = {
         var me = this;
 
         this.db.createUser('login', 'password', 'foo@bar')
-            .then(function () { return me.db.selectUser('login'); })
-            .then(function (user) {
+            .then(function () { return me.db.selectUsers({ login: 'login' }); })
+            .then(function (users) {
+                var user = users.length && users[0];
                 var output = [];
                 me.cons.rl = { 
                     write: function (line) {
@@ -52,8 +53,9 @@ module.exports = {
 
         this.db.createUser('login', 'password', 'foo@bar')
             .then(function () { return me.db.createUser('login2', 'password2', 'foo@bar2'); })
-            .then(function () { return me.db.selectUser('login'); })
-            .then(function (user) {
+            .then(function () { return me.db.selectUsers({ login: 'login' }); })
+            .then(function (users) {
+                var user = users.length && users[0];
                 var output = [];
                 me.cons.rl = { 
                     write: function (line) {
@@ -178,8 +180,9 @@ module.exports = {
 
         this.db.createUser('login', 'password', 'foo@bar')
             .then(function () { return me.db.createSession('login', 'sid') })
-            .then(function () { return me.db.selectSession('sid') })
-            .then(function (session) {
+            .then(function () { return me.db.selectSessions({ sid: 'sid' }) })
+            .then(function (sessions) {
+                var session = sessions.length && sessions[0];
                 var output = [];
                 me.cons.rl = { 
                     write: function (line) {
@@ -207,8 +210,9 @@ module.exports = {
             .then(function () { return me.db.createUser('login2', 'password2', 'foo@bar2'); })
             .then(function () { return me.db.createSession('login', 'sid'); })
             .then(function () { return me.db.createSession('login2', 'sid2'); })
-            .then(function () { return me.db.selectSession('sid'); })
-            .then(function (session) {
+            .then(function () { return me.db.selectSessions({ sid: 'sid' }); })
+            .then(function (sessions) {
+                var session = sessions.length && sessions[0];
                 var output = [];
                 me.cons.rl = { 
                     write: function (line) {
