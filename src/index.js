@@ -13,11 +13,7 @@ var fs              = require('fs'),
     Globalize       = require('./globalize.js'),
     Console         = require('./console.js');
 
-var httpOption = argv['h'] ? argv['h'] : argv['http'],
-    httpsOption = argv['s'] ? argv['s'] : argv['https'];
-
-if (argv['_'].length == 0
-        || (argv['_'][0] == 'start' && !httpOption && !httpsOption)) {
+if (argv['_'].length == 0) {
     console.log("Usage: node src/index.js <command> [options]");
     console.log("\nCommands:");
     console.log("\tstart\t\t\tStarts the daemon");
@@ -26,10 +22,6 @@ if (argv['_'].length == 0
     console.log("\tdelete-user\t\tDeletes a user");
     console.log("\tlist-sessions\t\tLists existing sessions");
     console.log("\tdelete-session\t\tDeletes a session");
-    console.log("\n'start' options:");
-    console.log("\t-h, --http=host:port\tCreate HTTP proxy");
-    console.log("\t-s, --https=host:port\tCreate HTTPS proxy");
-    console.log("\n\tAt least one -h or -s option must be provided");
     console.log("\n'list-users' options:");
     console.log("\t-e, --email=name@host\tOptional. Limit query to this email");
     console.log("\n'list-sessions' options:");
@@ -48,21 +40,6 @@ var sl          = new ServiceLocator(),
 
 switch (argv['_'][0]) {
     case 'start':
-        if (httpOption) {
-            httpOption = httpOption.split(':');
-            if (httpOption.length != 2) {
-                console.log('-h [--http] option expects "hostname:portnumber" string');
-                return;
-            }
-        }
-        if (httpsOption) {
-            httpsOption = httpsOption.split(':');
-            if (httpsOption.length != 2) {
-                console.log('-s [--https] option expects "hostname:portnumber" string');
-                return;
-            }
-        }
-
         var proxy = httpProxy.createProxyServer({
             target: config['target'],
             xfwd: true,
@@ -75,26 +52,26 @@ switch (argv['_'][0]) {
 
         var bindPromises = [];
 
-        if (httpOption) {
+        if (config['http']['enable']) {
             var httpDefer = q.defer();
             bindPromises.push(httpDefer.promise);
 
             var httpServer = http.createServer(function (req, res) { front.requestListener(req, res); });
-            httpServer.listen(httpOption[1], httpOption[0], function () { httpDefer.resolve(); });
+            httpServer.listen(config['http']['port'], config['http']['host'], function () { httpDefer.resolve(); });
         }
 
-        if (httpsOption) {
+        if (config['https']['enable']) {
             var httpsDefer = q.defer();
             bindPromises.push(httpsDefer.promise);
 
             var httpsServer = https.createServer(
                 {
-                    key: fs.readFileSync(config['ssl']['key'], 'utf8'),
-                    cert: fs.readFileSync(config['ssl']['cert'], 'utf8')
+                    key: fs.readFileSync(config['https']['key'], 'utf8'),
+                    cert: fs.readFileSync(config['https']['cert'], 'utf8')
                 },
                 function (req, res) { front.requestListener(req, res); }
             );
-            httpsServer.listen(httpsOption[1], httpsOption[0], function () { httpsDefer.resolve(); });
+            httpsServer.listen(config['https']['port'], config['https']['host'], function () { httpDefer.resolve(); });
         }
 
         q.all(bindPromises)

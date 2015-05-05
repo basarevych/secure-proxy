@@ -6,8 +6,8 @@ module.exports = {
     user: 'www',                    // Drop privileges to these
     group: 'www',
 
-    otp: {                          // One Time Password (OTP)
-        enable: true,
+    otp: {
+        enable: true,               // Enable One Time Password (OTP)
         name: 'Secure Proxy',       // Google Authenticator account name
     },                              // (will be visible to user)
 
@@ -18,7 +18,16 @@ module.exports = {
         from: 'www@localhost',      // 'From' header of email sent by proxy
     },
 
-    ssl: {                          // Ignored if HTTPS is not enabled
+    http: {
+        enable: true,               // Enable HTTP proxy
+        host: 'localhost',
+        port: 80,
+    },
+
+    https: {
+        enable: false,              // Enable HTTPS proxy
+        host: 'localhost',
+        port: 443,
         key: '/etc/certs/server.unencrypted.key',
         cert: '/etc/certs/server.crt',
     },

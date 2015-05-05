@@ -10,8 +10,6 @@
 #                               Set it to "YES" to enable secure-proxy
 # secure_proxy_path (str):      Set to "/usr/local/secure-proxy" by default.
 #                               Set it the installation path
-# secure_proxy_options (str):   Set to "" by default
-#                               Secure proxy options, like "start -h 1.2.3.4:80"
 #
 
 . /etc/rc.subr
@@ -27,6 +25,6 @@ load_rc_config $name
 
 pidfile="/var/run/$name.pid"
 command="/usr/sbin/daemon"
-command_args="-P $pidfile /usr/local/bin/node $secure_proxy_path/src/index.js $secure_proxy_options"
+command_args="-P $pidfile /usr/local/bin/node $secure_proxy_path/src/index.js start"
 
 run_rc_command "$1"
