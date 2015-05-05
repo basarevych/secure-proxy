@@ -51,6 +51,7 @@ Console.prototype.listUsers = function (email) {
                     + "\nLogin:\t\t" + users[i]['login']
                     + "\nPassword:\t" + users[i]['password']
                     + "\nEmail:\t\t" + users[i]['email']
+                    + "\nSecret:\t\t" + users[i]['secret']
                     + "\nOTP Key:\t" + users[i]['otp_key']
                     + "\nOTP Confirmed:\t" + (users[i]['otp_confirmed'] ? 'true' : 'false')
                     + "\n"
