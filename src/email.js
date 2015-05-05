@@ -3,15 +3,15 @@
 var email   = require('emailjs'),
     q       = require('q');
 
-function Mail(serviceLocator) {
+function Email(serviceLocator) {
     this.sl = serviceLocator;
 
-    this.sl.set('mail', this);
+    this.sl.set('email', this);
 }
 
-module.exports = Mail;
+module.exports = Email;
 
-Mail.prototype.getServer = function () {
+Email.prototype.getServer = function () {
     if (typeof this.server != 'undefined')
         return this.server;
 
@@ -27,7 +27,7 @@ Mail.prototype.getServer = function () {
     return server;
 };
 
-Mail.prototype.send = function (params) {
+Email.prototype.send = function (params) {
     var config = this.sl.get('config'),
         server = this.getServer(),
         defer = q.defer();

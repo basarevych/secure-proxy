@@ -276,7 +276,7 @@ Api.prototype.resetRequest = function (sid, req, res) {
         globalize = this.sl.get('globalize'),
         query = url.parse(req.url, true),
         type = query.query['type'],
-        email = query.query['email'],
+        userEmail = query.query['email'],
         lang = query.query['lang'];
 
     if (typeof type == 'undefined' || typeof email == 'undefined' || typeof lang == 'undefined')
@@ -285,39 +285,61 @@ Api.prototype.resetRequest = function (sid, req, res) {
     if (globalize.supportedLocales.indexOf(lang) == -1)
         return front.returnBadRequest(res);
 
-    db.selectUserByEmail(email)
-        .then(function (user) {
-            if (!user || !user['email'] || !req.headers.host) {
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: false }));
-                return;
-            }
+    var gl = globalize.getLocale(lang);
+    if (type == 'password') {
+        db.selectUsers(userEmail)
+            .then(function (users) {
+                var externPassword = false, promises = [];
+                users.forEach(function (user) {
+                    if (user['password'] == '* NOT SET *') {
+                        externPassword = true;
+                        return;
+                    }
 
-            var gl = globalize.getLocale(lang);
-            if (type == 'auth') {
-                if (user['password'] == '* NOT SET *') {
-                    res.writeHead(200, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({
-                        success: false,
-                        reason: 'extern-password',
+                    var link = query.protocol + '//' + query.host + '/secure-proxy/static/auth/reset-password.html#' + user['secret'];
+                    promises.push(email.send({
+                        subject:    gl.formatMessage('RESET_PASSWORD_SUBJECT'),
+                        to:         user['email'],
+                        text:       gl.formatMessage('RESET_PASSWORD_TEXT', { host: query.hostname, link: link }),
+                        html:       gl.formatMessage('RESET_PASSWORD_HTML', { host: query.hostname, link: link }),
                     }));
-                    return;
-                }
-                email.send({
-                    subject:    gl.formatMessage('RESET_PASSWORD_SUBJECT'),
-                    to:         user['email'],
-                    text:       gl.formatMessage('RESET_PASSWORD_TEXT', { host: host, link: link }),
-                    html:       gl.formatMessage('RESET_PASSWORD_HTML', { host: host, link: link }),
                 });
-            } else if (type == 'otp') {
-                email.send({
-                    subject:    gl.formatMessage('RESET_OTP_SUBJECT'),
-                    to:         user['email'],
-                    text:       gl.formatMessage('RESET_OTP_TEXT', { host: host, link: link }),
-                    html:       gl.formatMessage('RESET_OTP_HTML', { host: host, link: link }),
+
+                q.all(promises)
+                    .then(function () {
+                        if (externPassword) {
+                            res.writeHead(200, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({
+                                success: false,
+                                reason: 'extern-password',
+                            }));
+                        } else {
+                            res.writeHead(200, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({ success: (promises.length > 0) }));
+                        }
+                    });
+            });
+    } else if (type == 'otp') {
+        db.selectUsers(userEmail)
+            .then(function (users) {
+                var promises = [];
+                users.forEach(function (user) {
+                    var link = query.protocol + '//' + query.host + '/secure-proxy/static/auth/reset-otp.html#' + user['secret'];
+                    promises.push(email.send({
+                        subject:    gl.formatMessage('RESET_OTP_SUBJECT'),
+                        to:         user['email'],
+                        text:       gl.formatMessage('RESET_OTP_TEXT', { host: query.hostname, link: link }),
+                        html:       gl.formatMessage('RESET_OTP_HTML', { host: query.hostname, link: link }),
+                    }));
                 });
-            } else {
-                return front.returnBadRequest(res);
-            }
-        });
+
+                q.all(promises)
+                    .then(function () {
+                        res.writeHead(200, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ success: (promises.length > 0) }));
+                    });
+            });
+    } else {
+        return front.returnBadRequest(res);
+    }
 };

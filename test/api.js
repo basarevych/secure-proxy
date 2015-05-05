@@ -6,6 +6,7 @@ var q               = require('q'),
     Database        = require('../src/database.js'),
     Front           = require('../src/front.js'),
     Api             = require('../src/api.js'),
+    Email           = require('../src/email.js'),
     Globalize       = require('../src/globalize.js');
 
 module.exports = {
@@ -14,6 +15,7 @@ module.exports = {
         this.db = new Database(this.sl);
         this.front = new Front(this.sl);
         this.api = new Api(this.sl);
+        this.email = new Email(this.sl);
         this.globalize = new Globalize(this.sl);
 
         this.db.dbFile = ":memory:";
@@ -387,6 +389,9 @@ module.exports = {
             end: function (html) {
                 me.db.selectUser('login')
                     .then(function (user) {
+                        var result = JSON.parse(html);
+                        test.ok(typeof result['success'] != 'undefined', "success is not returned");
+                        test.equal(result['success'], true, "success is incorrect");
                         test.notEqual(user['secret'], oldSecret, "secret was not changed");
                         test.equal(user['otp_confirmed'], false, "otp_confirmed was not reset");
                         test.done();
@@ -403,6 +408,84 @@ module.exports = {
                 oldSecret = user['secret'];
                 req.url = '/secure-proxy/api/otp?action=reset&secret=' + user['secret'];
                 me.api.otp('sid', req, res);
+            });
+    },
+
+    testResetPasswordRequest: function (test) {
+        var me = this;
+
+        var hasText = false, hasHtml = false;
+        this.email.send = function (params) {
+            hasText = params['text'] && params['text'].length > 0;
+            hasHtml = params['html'] && params['html'].length > 0;
+
+            var defer = q.defer();
+            defer.resolve();
+            return defer.promise;
+        };
+
+        var req = {
+            headers: {},
+            url: 'http://localhost:8000/secure-proxy/api/reset-request?type=password'
+                + '&email=' + encodeURIComponent('foo@bar')
+                + '&lang=en'
+        };
+
+        var res = {
+            writeHead: function (code, headers) {
+            },
+            end: function (html) {
+                var result = JSON.parse(html);
+                test.ok(typeof result['success'] != 'undefined', "success is not returned");
+                test.equal(result['success'], true, "success is incorrect");
+                test.ok(hasText, "Text part is not set");
+                test.ok(hasHtml, "HTML part is not set");
+                test.done();
+            }
+        };
+
+        this.db.createUser('login', 'password', 'foo@bar')
+            .then(function () {
+                me.api.resetRequest('sid', req, res);
+            });
+    },
+
+    testResetOtpRequest: function (test) {
+        var me = this;
+
+        var hasText = false, hasHtml = false;
+        this.email.send = function (params) {
+            hasText = params['text'] && params['text'].length > 0;
+            hasHtml = params['html'] && params['html'].length > 0;
+
+            var defer = q.defer();
+            defer.resolve();
+            return defer.promise;
+        };
+
+        var req = {
+            headers: {},
+            url: 'http://localhost:8000/secure-proxy/api/reset-request?type=otp'
+                + '&email=' + encodeURIComponent('foo@bar')
+                + '&lang=en'
+        };
+
+        var res = {
+            writeHead: function (code, headers) {
+            },
+            end: function (html) {
+                var result = JSON.parse(html);
+                test.ok(typeof result['success'] != 'undefined', "success is not returned");
+                test.equal(result['success'], true, "success is incorrect");
+                test.ok(hasText, "Text part is not set");
+                test.ok(hasHtml, "HTML part is not set");
+                test.done();
+            }
+        };
+
+        this.db.createUser('login', 'password', 'foo@bar')
+            .then(function () {
+                me.api.resetRequest('sid', req, res);
             });
     },
 };

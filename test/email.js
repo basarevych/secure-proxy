@@ -1,12 +1,12 @@
 'use strict';
 
 var ServiceLocator  = require('../src/service-locator.js'),
-    Mail            = require('../src/mail.js');
+    Email           = require('../src/email.js');
 
 module.exports = {
     setUp: function (callback) {
         this.sl = new ServiceLocator();
-        this.mail = new Mail(this.sl);
+        this.email = new Email(this.sl);
 
         callback();
     },
@@ -16,7 +16,7 @@ module.exports = {
     },
 
     testSendWorks: function (test) {
-        this.mail.server = {
+        this.email.server = {
             send: function (message, cb) {
                 cb(null, message);
 
@@ -29,7 +29,7 @@ module.exports = {
             },
         };
 
-        this.mail.send({
+        this.email.send({
             subject:    'subject',
             to:         'to',
             from:       'from',
