@@ -198,7 +198,7 @@ module.exports = {
 
         var req = {
             headers: {},
-            url: '/secure-proxy/api/auth?action=set&login=login&password=password&secret=foobar',
+            url: '/secure-proxy/api/auth?action=set&password=password&secret=foobar',
         };
 
         var oldSecret;
@@ -206,7 +206,7 @@ module.exports = {
             writeHead: function (code, headers) {
             },
             end: function (html) {
-                me.db.selectUsers({ login: 'login' })
+                me.db.selectUsers({ secret: 'login' })
                     .then(function (users) {
                         var user = users.length && users[0];
                         me.db.checkUserPassword('login', 'password')
@@ -228,7 +228,7 @@ module.exports = {
             .then(function (users) {
                 var user = users.length && users[0];
                 oldSecret = user['secret'];
-                req.url = '/secure-proxy/api/auth?action=set&login=login&password=password&secret=' + user['secret'],
+                req.url = '/secure-proxy/api/auth?action=set&password=password&secret=' + user['secret'],
                 me.api.auth('sid', req, res);
             });
     },

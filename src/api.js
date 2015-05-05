@@ -137,11 +137,11 @@ Api.prototype.auth = function (sid, req, res) {
         if (typeof secret == 'undefined')
             return front.returnBadRequest(res);
 
-        db.selectUsers({ login: login })
+        db.selectUsers({ secret: secret })
             .then(function (users) {
                 var user = users.length && users[0];
                 if (user && user['password'] != '* NOT SET *' && user['secret'] == secret) {
-                    db.setUserPassword(login, password)
+                    db.setUserPassword(user['login'], password)
                         .then(function () { return db.generateUserSecret(login); })
                         .then(function () {
                             res.writeHead(200, { 'Content-Type': 'application/json' });
