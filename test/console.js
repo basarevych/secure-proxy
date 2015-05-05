@@ -47,6 +47,34 @@ module.exports = {
             });
     },
 
+    testListUsersByEmail: function (test) {
+        var me = this;
+
+        this.db.createUser('login', 'password', 'foo@bar')
+            .then(function () { return me.db.createUser('login2', 'password2', 'foo@bar2'); })
+            .then(function () { return me.db.selectUser('login'); })
+            .then(function (user) {
+                var output = [];
+                me.cons.rl = { 
+                    write: function (line) {
+                        var sublines = line.split("\n");
+                        for (var i = 0; i < sublines.length; i++)
+                            output.push(sublines[i]);
+                    },
+                    close: function () {
+                        test.equal(checkArray(output, /ID:\s+1$/), true, "id is missing");
+                        test.equal(checkArray(output, /Login:\s+login$/), true, "login is missing");
+                        test.equal(checkArray(output, /Password:\s+(\S+)/, user['password']), true, "password is missing");
+                        test.equal(checkArray(output, /Email:\s+foo@bar$/), true, "email is missing");
+                        test.equal(checkArray(output, /OTP Key:\s+(\S+)/, user['otp_key']), true, "otp_key is missing");
+                        test.equal(checkArray(output, /OTP Confirmed:\s+false$/), true, "otp_cofirmed is missing");
+                        test.done();
+                    }
+                };
+                me.cons.listUsers('foo@bar');
+            });
+    },
+
     testUpdateUserCreates: function (test) {
         var defer = q.defer(), newLogin, newPassword, newEmail;
         this.db.createUser = function (login, password, email) {

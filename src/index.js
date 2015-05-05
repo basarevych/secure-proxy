@@ -30,6 +30,8 @@ if (argv['_'].length == 0
     console.log("\t-h, --http=host:port\tCreate HTTP proxy");
     console.log("\t-s, --https=host:port\tCreate HTTPS proxy");
     console.log("\n\tAt least one -h or -s option must be provided");
+    console.log("\n'list-users' options:");
+    console.log("\t-e, --email=name@host\tOptional. Limit query to this email");
     console.log("");
     return;
 }
@@ -108,7 +110,8 @@ switch (argv['_'][0]) {
         break;
 
     case 'list-users':
-        cons.listUsers();
+        var email = argv['e'] ? argv['e'] : argv['email'];
+        cons.listUsers(email);
         break;
 
     case 'update-user':

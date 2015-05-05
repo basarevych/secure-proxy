@@ -33,12 +33,17 @@ Console.prototype.getReadline = function () {
     return rl;
 };
 
-Console.prototype.listUsers = function () {
+Console.prototype.listUsers = function (email) {
     var db = this.getDatabase(),
         rl = this.getReadline();
 
-    rl.write("==> User list\n");
-    db.selectUsers()
+    rl.write(email ? "==> User list (" + email + ")\n" : "==> User list\n");
+
+    var params = {};
+    if (email)
+        params['email'] = email;
+
+    db.selectUsers(params)
         .then(function (users) {
             for (var i = 0; i < users.length; i++) {
                 rl.write(

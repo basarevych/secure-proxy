@@ -282,6 +282,9 @@ Api.prototype.resetRequest = function (sid, req, res) {
     if (typeof type == 'undefined' || typeof email == 'undefined' || typeof lang == 'undefined')
         return front.returnBadRequest(res);
 
+    if (globalize.supportedLocales.indexOf(lang) == -1)
+        return front.returnBadRequest(res);
+
     db.selectUserByEmail(email)
         .then(function (user) {
             if (!user || !user['email'] || !req.headers.host) {
@@ -303,15 +306,15 @@ Api.prototype.resetRequest = function (sid, req, res) {
                 email.send({
                     subject:    gl.formatMessage('RESET_PASSWORD_SUBJECT'),
                     to:         user['email'],
-                    text:       gl.formatMessage('RESET_PASSWORD_TEXT'),
-                    html:       gl.formatMessage('RESET_PASSWORD_HTML'),
+                    text:       gl.formatMessage('RESET_PASSWORD_TEXT', { host: host, link: link }),
+                    html:       gl.formatMessage('RESET_PASSWORD_HTML', { host: host, link: link }),
                 });
             } else if (type == 'otp') {
                 email.send({
                     subject:    gl.formatMessage('RESET_OTP_SUBJECT'),
                     to:         user['email'],
-                    text:       gl.formatMessage('RESET_OTP_TEXT'),
-                    html:       gl.formatMessage('RESET_OTP_HTML'),
+                    text:       gl.formatMessage('RESET_OTP_TEXT', { host: host, link: link }),
+                    html:       gl.formatMessage('RESET_OTP_HTML', { host: host, link: link }),
                 });
             } else {
                 return front.returnBadRequest(res);

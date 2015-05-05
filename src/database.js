@@ -111,17 +111,26 @@ Database.prototype.selectUser = function (login) {
     return defer.promise;
 };
 
-Database.prototype.selectUsers = function () {
+Database.prototype.selectUsers = function (params) {
     var engine = this.getEngine(),
         defer = q.defer();
 
-    var sel = engine.prepare(
-        "SELECT *"
-      + "   FROM users"
-      + "   ORDER BY id ASC"
-    );
+    var bind = {}, where = [];
+    if (typeof params != 'undefined') {
+        if (typeof params['email'] != 'undefined') {
+            bind['$email'] = params['email'];
+            where.push(" email = $email");
+        }
+    }
+
+    var sql = "SELECT * FROM users";
+    if (where.length)
+        sql += " WHERE " + where.join(' AND ');
+    sql += " ORDER BY id ASC";
+
+    var sel = engine.prepare(sql);
     sel.all(
-        { },
+        bind,
         function (err, rows) {
             if (err) {
                 defer.reject(err);
