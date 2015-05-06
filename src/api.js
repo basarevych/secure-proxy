@@ -140,22 +140,29 @@ Api.prototype.auth = function (sid, req, res) {
         db.selectUsers({ secret: secret })
             .then(function (users) {
                 var user = users.length && users[0];
-                if (user && user['password'] != '* NOT SET *' && user['secret'] == secret) {
-                    db.setUserPassword(user['login'], password)
-                        .then(function () { return db.generateUserSecret(login); })
-                        .then(function () {
-                            res.writeHead(200, { 'Content-Type': 'application/json' });
-                            res.end(JSON.stringify({ success: true }));
-                        })
-                        .catch(function (err) {
-                            console.error(err);
-                            front.returnInternalError(res);
-                        });
-                    return;
+                if (user) {
+                    if (user['password'] != '* NOT SET *' && user['secret'] == secret) {
+                        db.setUserPassword(user['login'], password)
+                            .then(function () { return db.generateUserSecret(user['login']); })
+                            .then(function () {
+                                res.writeHead(200, { 'Content-Type': 'application/json' });
+                                res.end(JSON.stringify({ success: true }));
+                            })
+                            .catch(function (err) {
+                                console.error(err);
+                                front.returnInternalError(res);
+                            });
+                    } else {
+                        res.writeHead(200, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ success: false }));
+                    }
+                } else {
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({
+                        success: false,
+                        reason: 'expired',
+                    }));
                 }
-
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: false }));
             })
             .catch(function (err) {
                 console.error(err);
@@ -214,7 +221,8 @@ Api.prototype.otp = function (sid, req, res) {
                 db.checkUserOtpKey(session['login'], otp)
                     .then(function (correct) {
                         if (correct) {
-                            db.setSessionOtp(sid, true)
+                            db.setUserOtpConfirmed(session['login'], true)
+                                .then(function () { return db.setSessionOtp(sid, true); })
                                 .then(function () {
                                     res.writeHead(200, { 'Content-Type': 'application/json' });
                                     res.end(JSON.stringify({
@@ -259,7 +267,10 @@ Api.prototype.otp = function (sid, req, res) {
                         }
 
                         res.writeHead(200, { 'Content-Type': 'application/json' });
-                        res.end(JSON.stringify({ success: false }));
+                        res.end(JSON.stringify({
+                            success: false,
+                            reason: 'expired',
+                        }));
                     })
                     .catch(function (err) {
                         console.error(err);
@@ -287,7 +298,7 @@ Api.prototype.resetRequest = function (sid, req, res) {
         currentUrl = query.query['url'],
         currentQuery = url.parse(currentUrl, true);
 
-    if (typeof type == 'undefined' || typeof email == 'undefined' || typeof lang == 'undefined' || typeof url == 'undefined')
+    if (typeof type == 'undefined' || typeof userEmail == 'undefined' || typeof lang == 'undefined' || typeof url == 'undefined')
         return front.returnBadRequest(res);
 
     if (globalize.supportedLocales.indexOf(lang) == -1)

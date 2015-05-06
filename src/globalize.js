@@ -31,7 +31,7 @@ Globalize.prototype.getLocale = function (locale) {
         require("../front/bower_components/cldr-data/main/" + locale + "/numbers")
     );
     globalize.loadMessages(require("../front/l10n/" + locale));
-    globalize.locale("en");
+    globalize.locale(locale);
 
     this.locales[locale] = globalize;
     return globalize;

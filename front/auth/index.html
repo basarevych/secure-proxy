@@ -140,6 +140,8 @@
                             <div class="form-group">
                                 <div class="col-sm-offset-4 col-sm-8">
                                     <button id="submit-otp-button" class="btn btn-default" type="submit" onclick="submitOtp()"></button>
+                                    &nbsp;&nbsp;&nbsp;
+                                    <a id="reset-otp-button" href="javascript:resetOtp()"></a>
                                 </div>
                             </div>
                         </div>
@@ -195,8 +197,8 @@
                 $('#reset-password-button').text(gl.formatMessage('RESET_PASSWORD_LABEL'));
                 $('#qr-label').text(gl.formatMessage('QR_LABEL'));
                 $('#otp-label').text(gl.formatMessage('OTP_LABEL'));
-                $('#reset-label').text(gl.formatMessage('RESET_LABEL'));
                 $('#submit-otp-button').text(gl.formatMessage('SUBMIT_LABEL'));
+                $('#reset-otp-button').text(gl.formatMessage('RESET_OTP_LABEL'));
 
                 $('#login-form .form-group').removeClass('has-error');
                 $('#login-form .help-block ul').empty();
@@ -264,6 +266,8 @@
                                             .addClass('disabled')
                                             .prop('disabled', true);
                                         $('#submit-password-button').hide();
+                                        $('#reset-password-button').hide();
+                                        $('#otp').val('');
                                         $('#otp-section').slideDown(function () { $('#otp').focus() });
                                     }
                                 });
@@ -367,6 +371,58 @@
                 });
             }
 
+            function resetOtp() {
+                var messages = $('#reset-messages');
+                messages.empty();
+                $('#email').val(''),
+                $('#modal-form .form-group').removeClass('has-error');
+                $('#modal-form .help-block ul').empty();
+
+                $('#modal-submit')
+                    .off('click')
+                    .on('click', function () {
+                        messages.empty();
+
+                        var email = validateFormField($('#email'));
+
+                        if (!email) {
+                            $('#email').focus();
+                            return;
+                        }
+
+                        $('#modal-submit').addClass('disabled').prop('disabled', true);
+                        $.ajax({
+                            url: '/secure-proxy/api/reset-request',
+                            method: 'GET',
+                            data: {
+                                type: 'otp',
+                                email: $('#email').val(),
+                                lang: currentLocale,
+                                url: window.location.toString(),
+                            },
+                            success: function (data) {
+                                if (data.success) {
+                                    var msg = $('<div></div>');
+                                    msg.addClass('alert alert-success')
+                                       .text(gl.formatMessage('EMAIL_SENT'))
+                                       .appendTo(messages);
+                                } else {
+                                    var msg = $('<div></div>');
+                                    msg.addClass('alert alert-danger')
+                                       .text(gl.formatMessage('INVALID_EMAIL'))
+                                       .appendTo(messages);
+                                    $('#modal-submit').removeClass('disabled').prop('disabled', false);
+                                }
+                            },
+                        });
+                    });
+
+                $('#modal-title').text(gl.formatMessage('RESET_OTP_TITLE'));
+                $('#modal-submit').removeClass('disabled').prop('disabled', false);
+                $('#modal-form').modal('show');
+                $('#email').focus();
+            }
+
             $(document).ready(function () {
                 if ($('#login').prop('disabled')) {
                     $('#login')
@@ -376,6 +432,7 @@
                         .removeClass('disabled')
                         .prop('disabled', false);
                     $('#submit-password-button').show();
+                    $('#reset-password-button').show();
                     $('#otp-section').hide();
                 }
 

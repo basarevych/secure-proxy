@@ -44,34 +44,6 @@
 
                         <div id="password-section">
                             <div class="form-group">
-                                <label id="newpassword1-label" class="col-sm-4 control-label" for="newpassword1"></label>
-                                <div class="col-sm-8">
-                                    <input class="form-control" type="password" name="newpassword1" id="newpassword1"
-                                           onkeydown="$('#password-messages').empty()"
-                                           data-on-blur="validateFormField($('input[name=newpassword1]'))"
-                                           data-on-enter="$('input[name=newpassword2]').focus()">
-                                    <div class="help-block">
-                                        <ul class="list-unstyled icon-list error-list">
-                                        </ul>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label id="newpassword2-label" class="col-sm-4 control-label" for="newpassword2"></label>
-                                <div class="col-sm-8">
-                                    <input class="form-control" type="password" name="newpassword2" id="newpassword2"
-                                           onkeydown="$('#password-messages').empty()"
-                                           data-on-blur="validateFormField($('input[name=newpassword2]'))"
-                                           data-on-enter="submitPassword()">
-                                    <div class="help-block">
-                                        <ul class="list-unstyled icon-list error-list">
-                                        </ul>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="form-group">
                                 <div class="col-sm-offset-4 col-sm-8">
                                     <button id="submit-password-button" class="btn btn-default" type="submit" onclick="submitPassword()"></button>
                                 </div>
@@ -120,46 +92,21 @@
 
             function initPage() {
                 $('#page-title').text(gl.formatMessage('PAGE_TITLE'));
-                $('#newpassword1-label').text(gl.formatMessage('NEWPASSWORD1_LABEL') + ':');
-                $('#newpassword2-label').text(gl.formatMessage('NEWPASSWORD2_LABEL') + ':');
-                $('#submit-password-button').text(gl.formatMessage('SUBMIT_LABEL'));
+                $('#submit-password-button').text(gl.formatMessage('RESET_CODE_LABEL'));
 
-                $('#password-form .form-group').removeClass('has-error');
-                $('#password-form .help-block ul').empty();
                 $('#password-section').show();
-                $('#password-form').slideDown(function () { $('#newpassword1').focus() });
+                $('#password-form').slideDown();
             }
 
             function submitPassword() {
-                var newpassword1 = validateFormField($('#newpassword1')),
-                    newpassword2 = validateFormField($('#newpassword2'));
-
-                if (!newpassword1) {
-                    $('#newpassword1').focus();
-                    return;
-                }
-
-                if (!newpassword2) {
-                    $('#newpassword2').focus();
-                    return;
-                }
-
                 var messages = $('#password-messages');
-                if ($('#newpassword1').val() != $('#newpassword2').val()) {
-                    var msg = $('<div></div>');
-                    msg.addClass('alert alert-danger')
-                       .text(gl.formatMessage('PASSWORDS_DO_NOT_MATCH'))
-                       .appendTo(messages);
-                    return;
-                }
 
                 $.ajax({
-                    url: '/secure-proxy/api/auth',
+                    url: '/secure-proxy/api/otp',
                     method: 'GET',
                     data: {
-                        action: 'set',
+                        action: 'reset',
                         secret: secret,
-                        password: $('#newpassword1').val(),
                     },
                     success: function (data) {
                         messages.empty();
@@ -167,14 +114,14 @@
                         if (data.success) {
                             var msg = $('<div></div>');
                             msg.addClass('alert alert-success')
-                               .text(gl.formatMessage('PASSWORD_RESET_SUCCESS'))
+                               .text(gl.formatMessage('CODE_RESET_SUCCESS'))
                                .appendTo(messages);
                             $('#password-section').hide();
                         } else {
                             var expired = data.reason && data.reason == 'expired';
                             var msg = $('<div></div>');
                             msg.addClass('alert alert-danger')
-                               .text(gl.formatMessage(expired ? 'PAGE_EXPIRED' : 'PASSWORD_RESET_FAILURE'))
+                               .text(gl.formatMessage(expired ? 'PAGE_EXPIRED' : 'CODE_RESET_FAILURE'))
                                .appendTo(messages);
                         }
                     }
