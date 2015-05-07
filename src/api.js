@@ -320,8 +320,8 @@ Api.prototype.resetRequest = function (protocol, sid, req, res) {
                     promises.push(email.send({
                         subject:    gl.formatMessage('RESET_PASSWORD_SUBJECT'),
                         to:         user['email'],
-                        text:       gl.formatMessage('RESET_PASSWORD_TEXT', { host: hostname, link: link }),
-                        html:       gl.formatMessage('RESET_PASSWORD_HTML', { host: hostname, link: link }),
+                        text:       gl.formatMessage('RESET_PASSWORD_TEXT', { host: hostname, account: user['login'], link: link }),
+                        html:       gl.formatMessage('RESET_PASSWORD_HTML', { host: hostname, account: user['login'], link: link }),
                     }));
                 });
 
@@ -348,8 +348,8 @@ Api.prototype.resetRequest = function (protocol, sid, req, res) {
                     promises.push(email.send({
                         subject:    gl.formatMessage('RESET_OTP_SUBJECT'),
                         to:         user['email'],
-                        text:       gl.formatMessage('RESET_OTP_TEXT', { host: hostname, link: link }),
-                        html:       gl.formatMessage('RESET_OTP_HTML', { host: hostname, link: link }),
+                        text:       gl.formatMessage('RESET_OTP_TEXT', { host: hostname, account: user['login'], link: link }),
+                        html:       gl.formatMessage('RESET_OTP_HTML', { host: hostname, account: user['login'], link: link }),
                     }));
                 });
 
