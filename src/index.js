@@ -58,7 +58,7 @@ switch (argv['_'][0]) {
             var httpDefer = q.defer();
             bindPromises.push(httpDefer.promise);
 
-            var httpServer = http.createServer(function (req, res) { front.requestListener(req, res); });
+            var httpServer = http.createServer(function (req, res) { front.requestListener('http', req, res); });
             httpServer.listen(config['http']['port'], config['http']['host'], function () { httpDefer.resolve(); });
         }
 
@@ -71,7 +71,7 @@ switch (argv['_'][0]) {
                     key: fs.readFileSync(config['https']['key'], 'utf8'),
                     cert: fs.readFileSync(config['https']['cert'], 'utf8')
                 },
-                function (req, res) { front.requestListener(req, res); }
+                function (req, res) { front.requestListener('https', req, res); }
             );
             httpsServer.listen(config['https']['port'], config['https']['host'], function () { httpDefer.resolve(); });
         }

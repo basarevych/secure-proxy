@@ -58,7 +58,7 @@ module.exports = {
             }
         };
 
-        this.api.locale('sid', req, res);
+        this.api.locale('http', 'sid', req, res);
     },
 
     testLocaleReadsCookie: function (test) {
@@ -80,7 +80,7 @@ module.exports = {
             }
         };
 
-        this.api.locale('sid', req, res);
+        this.api.locale('http', 'sid', req, res);
     },
 
     testLocaleAutoselectWorks: function (test) {
@@ -102,7 +102,7 @@ module.exports = {
             }
         };
 
-        this.api.locale('sid', req, res);
+        this.api.locale('http', 'sid', req, res);
     },
 
     testLogout: function (test) {
@@ -132,7 +132,7 @@ module.exports = {
         this.db.createUser('login', 'password', 'foo@bar')
             .then(function () { return me.db.createSession('login', 'sid'); })
             .then(function () {
-                me.api.logout('sid', undefined, res);
+                me.api.logout('http', 'sid', undefined, res);
             });
     },
 
@@ -164,7 +164,7 @@ module.exports = {
 
         this.db.createUser('login', 'password', 'foo@bar')
             .then(function () {
-                me.api.auth('sid', req, res);
+                me.api.auth('http', 'sid', req, res);
             });
     },
 
@@ -189,7 +189,7 @@ module.exports = {
 
         this.db.createUser('login', 'other password', 'foo@bar')
             .then(function () {
-                me.api.auth('sid', req, res);
+                me.api.auth('http', 'sid', req, res);
             });
     },
 
@@ -229,7 +229,7 @@ module.exports = {
                 var user = users.length && users[0];
                 oldSecret = user['secret'];
                 req.url = '/secure-proxy/api/auth?action=set&password=password&secret=' + user['secret'],
-                me.api.auth('sid', req, res);
+                me.api.auth('http', 'sid', req, res);
             });
     },
 
@@ -257,7 +257,7 @@ module.exports = {
         this.db.createUser('login', 'password', 'foo@bar')
             .then(function () { return me.db.createSession('login', 'sid'); })
             .then(function () {
-                me.api.otp('sid', req, res);
+                me.api.otp('http', 'sid', req, res);
             });
     },
 
@@ -288,7 +288,7 @@ module.exports = {
             .then(function () { return me.db.createSession('login', 'sid'); })
             .then(function () { return me.db.setSessionPassword('sid', true); })
             .then(function () {
-                me.api.otp('sid', req, res);
+                me.api.otp('http', 'sid', req, res);
             });
     },
 
@@ -315,7 +315,7 @@ module.exports = {
             .then(function () { return me.db.createSession('login', 'sid'); })
             .then(function () { return me.db.setSessionPassword('sid', true); })
             .then(function () {
-                me.api.otp('sid', req, res);
+                me.api.otp('http', 'sid', req, res);
             });
     },
 
@@ -348,7 +348,7 @@ module.exports = {
                 var user = users.length && users[0];
                 var correct = speakeasy.time({ key: user['otp_key'], encoding: 'base32' });
                 req.url = '/secure-proxy/api/otp?action=check&otp=' + correct;
-                me.api.otp('sid', req, res);
+                me.api.otp('http', 'sid', req, res);
             });
     },
 
@@ -375,7 +375,7 @@ module.exports = {
             .then(function () { return me.db.createSession('login', 'sid'); })
             .then(function () { return me.db.setSessionPassword('sid', true); })
             .then(function () {
-                me.api.otp('sid', req, res);
+                me.api.otp('http', 'sid', req, res);
             });
     },
 
@@ -414,7 +414,7 @@ module.exports = {
                 var user = users.length && users[0];
                 oldSecret = user['secret'];
                 req.url = '/secure-proxy/api/otp?action=reset&secret=' + user['secret'];
-                me.api.otp('sid', req, res);
+                me.api.otp('http', 'sid', req, res);
             });
     },
 
@@ -432,10 +432,12 @@ module.exports = {
         };
 
         var req = {
-            headers: {},
+            headers: {
+                host: 'localhost:8000',
+            },
             url: 'http://localhost:8000/secure-proxy/api/reset-request?type=password'
                 + '&email=' + encodeURIComponent('foo@bar')
-                + '&lang=en&url=' + encodeURIComponent('http://localhost/'),
+                + '&lang=en',
         };
 
         var res = {
@@ -453,7 +455,7 @@ module.exports = {
 
         this.db.createUser('login', 'password', 'foo@bar')
             .then(function () {
-                me.api.resetRequest('sid', req, res);
+                me.api.resetRequest('http', 'sid', req, res);
             });
     },
 
@@ -471,10 +473,12 @@ module.exports = {
         };
 
         var req = {
-            headers: {},
+            headers: {
+                host: 'localhost:8000',
+            },
             url: 'http://localhost:8000/secure-proxy/api/reset-request?type=otp'
                 + '&email=' + encodeURIComponent('foo@bar')
-                + '&lang=en&url=' + encodeURIComponent('http://localhost/'),
+                + '&lang=en',
         };
 
         var res = {
@@ -492,7 +496,7 @@ module.exports = {
 
         this.db.createUser('login', 'password', 'foo@bar')
             .then(function () {
-                me.api.resetRequest('sid', req, res);
+                me.api.resetRequest('http', 'sid', req, res);
             });
     },
 };

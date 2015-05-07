@@ -69,7 +69,7 @@ Front.prototype.returnFile = function (filename, res) {
     });
 };
 
-Front.prototype.requestListener = function (req, res) {
+Front.prototype.requestListener = function (protocol, req, res) {
     var me = this,
         db = this.sl.get('database'),
         api = this.sl.get('api'),
@@ -108,15 +108,15 @@ Front.prototype.requestListener = function (req, res) {
                         return me.returnNotFound(res);
                     switch (urlParts[3]) {
                         case 'locale':
-                            return api.locale(sid, req, res);
+                            return api.locale(protocol, sid, req, res);
                         case 'logout':
-                            return api.logout(sid, req, res);
+                            return api.logout(protocol, sid, req, res);
                         case 'auth':
-                            return api.auth(sid, req, res);
+                            return api.auth(protocol, sid, req, res);
                         case 'otp':
-                            return api.otp(sid, req, res);
+                            return api.otp(protocol, sid, req, res);
                         case 'reset-request':
-                            return api.resetRequest(sid, req, res);
+                            return api.resetRequest(protocol, sid, req, res);
                         default:
                             return me.returnNotFound(res);
                     }

@@ -14,7 +14,7 @@ function Api(serviceLocator) {
 
 module.exports = Api;
 
-Api.prototype.locale = function (sid, req, res) {
+Api.prototype.locale = function (protocol, sid, req, res) {
     var front = this.sl.get('front'),
         globalize = this.sl.get('globalize'),
         config = this.sl.get('config'),
@@ -43,7 +43,7 @@ Api.prototype.locale = function (sid, req, res) {
     res.end(JSON.stringify({ locale: result }));
 };
 
-Api.prototype.logout = function (sid, req, res) {
+Api.prototype.logout = function (protocol, sid, req, res) {
     var db = this.sl.get('database'),
         front = this.sl.get('front');
 
@@ -70,7 +70,7 @@ Api.prototype.logout = function (sid, req, res) {
         });
 };
 
-Api.prototype.auth = function (sid, req, res) {
+Api.prototype.auth = function (protocol, sid, req, res) {
     var db = this.sl.get('database'),
         front = this.sl.get('front'),
         config = this.sl.get('config'),
@@ -173,7 +173,7 @@ Api.prototype.auth = function (sid, req, res) {
     }
 };
 
-Api.prototype.otp = function (sid, req, res) {
+Api.prototype.otp = function (protocol, sid, req, res) {
     var db = this.sl.get('database'),
         front = this.sl.get('front'),
         config = this.sl.get('config'),
@@ -286,7 +286,7 @@ Api.prototype.otp = function (sid, req, res) {
         });
 };
 
-Api.prototype.resetRequest = function (sid, req, res) {
+Api.prototype.resetRequest = function (protocol, sid, req, res) {
     var db = this.sl.get('database'),
         front = this.sl.get('front'),
         email = this.sl.get('email'),
@@ -295,16 +295,17 @@ Api.prototype.resetRequest = function (sid, req, res) {
         type = query.query['type'],
         userEmail = query.query['email'],
         lang = query.query['lang'],
-        currentUrl = query.query['url'],
-        currentQuery = url.parse(currentUrl, true);
+        host = req.headers.host;
 
-    if (typeof type == 'undefined' || typeof userEmail == 'undefined' || typeof lang == 'undefined' || typeof url == 'undefined')
+    if (typeof type == 'undefined' || typeof userEmail == 'undefined' || typeof lang == 'undefined')
         return front.returnBadRequest(res);
 
     if (globalize.supportedLocales.indexOf(lang) == -1)
         return front.returnBadRequest(res);
 
     var gl = globalize.getLocale(lang);
+    var parts = host.split(':'), hostname = parts[0];
+
     if (type == 'password') {
         db.selectUsers({ email: userEmail })
             .then(function (users) {
@@ -315,12 +316,12 @@ Api.prototype.resetRequest = function (sid, req, res) {
                         return;
                     }
 
-                    var link = currentQuery.protocol + '//' + currentQuery.host + '/secure-proxy/static/auth/reset-password.html#' + user['secret'];
+                    var link = protocol + '://' + host + '/secure-proxy/static/auth/reset-password.html#' + user['secret'];
                     promises.push(email.send({
                         subject:    gl.formatMessage('RESET_PASSWORD_SUBJECT'),
                         to:         user['email'],
-                        text:       gl.formatMessage('RESET_PASSWORD_TEXT', { host: currentQuery.hostname, link: link }),
-                        html:       gl.formatMessage('RESET_PASSWORD_HTML', { host: currentQuery.hostname, link: link }),
+                        text:       gl.formatMessage('RESET_PASSWORD_TEXT', { host: hostname, link: link }),
+                        html:       gl.formatMessage('RESET_PASSWORD_HTML', { host: hostname, link: link }),
                     }));
                 });
 
@@ -343,12 +344,12 @@ Api.prototype.resetRequest = function (sid, req, res) {
             .then(function (users) {
                 var promises = [];
                 users.forEach(function (user) {
-                    var link = currentQuery.protocol + '//' + currentQuery.host + '/secure-proxy/static/auth/reset-otp.html#' + user['secret'];
+                    var link = protocol + '://' + host + '/secure-proxy/static/auth/reset-otp.html#' + user['secret'];
                     promises.push(email.send({
                         subject:    gl.formatMessage('RESET_OTP_SUBJECT'),
                         to:         user['email'],
-                        text:       gl.formatMessage('RESET_OTP_TEXT', { host: currentQuery.hostname, link: link }),
-                        html:       gl.formatMessage('RESET_OTP_HTML', { host: currentQuery.hostname, link: link }),
+                        text:       gl.formatMessage('RESET_OTP_TEXT', { host: hostname, link: link }),
+                        html:       gl.formatMessage('RESET_OTP_HTML', { host: hostname, link: link }),
                     }));
                 });
 

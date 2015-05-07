@@ -158,7 +158,7 @@ module.exports = {
             test.done();
         };
 
-        this.front.requestListener(req, res);
+        this.front.requestListener('http', req, res);
     },
 
     testStaticFileRequestListener: function (test) {
@@ -174,7 +174,7 @@ module.exports = {
             test.done();
         };
 
-        this.front.requestListener(req, {});
+        this.front.requestListener('http', req, {});
     },
 
     testApiRequestListener: function (test) {
@@ -189,7 +189,7 @@ module.exports = {
             test.done();
         };
 
-        this.front.requestListener(req, {});
+        this.front.requestListener('http', req, {});
     },
 
     testGuestProxyRequestListener: function (test) {
@@ -205,7 +205,7 @@ module.exports = {
             test.done();
         };
 
-        this.front.requestListener(req, {});
+        this.front.requestListener('http', req, {});
     },
 
     testUserProxyRequestListener: function (test) {
@@ -227,7 +227,7 @@ module.exports = {
             .then(function () { return me.db.setSessionPassword('sid', true) })
             .then(function () { return me.db.setSessionOtp('sid', true) })
             .then(function () {
-                me.front.requestListener(req, {});
+                me.front.requestListener('http', req, {});
             });
     },
 
