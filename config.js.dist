@@ -20,13 +20,13 @@ module.exports = {
 
     http: {
         enable: true,               // Enable HTTP proxy
-        host: 'localhost',
+        host: 'example.com',
         port: 80,
     },
 
     https: {
         enable: false,              // Enable HTTPS proxy
-        host: 'localhost',
+        host: 'example.com',
         port: 443,
         key: '/etc/certs/server.unencrypted.key',
         cert: '/etc/certs/server.crt',
