@@ -10,6 +10,7 @@ Installation
 # git clone https://github.com/basarevych/secure-proxy
 # cd secure-proxy
 # ./scripts/install
+# ./scripts/build
 
 Create and edit config.js:
 # cp config.js.dist config.js

@@ -1,0 +1,10 @@
+{
+    "en": {
+        "RESET_PASSWORD_SUBJECT": "Reset password confirmation",
+        "RESET_PASSWORD_TEXT": "Someone has requested to reset your password on {host} (account: {account}). If you didn't request this reset, please ignore this message.\n\nClick this link to reset your password: {link}.",
+        "RESET_PASSWORD_HTML": "<p>Someone has requested to reset your password on {host} (account: {account}). If you didn't request this reset, please ignore this message.</p><p>Click this link to reset your password: {link}.</p>",
+        "RESET_OTP_SUBJECT": "Reset password confirmation",
+        "RESET_OTP_TEXT": "Someone has requested to reset Google Authenticator code on {host} (account: {account}). If you didn't request this reset, please ignore this message.\n\nClick this link to reset your code: {link}.",
+        "RESET_OTP_HTML": "<p>Someone has requested to reset Google Authenticator code on {host} (account: {account}). If you didn't request this reset, please ignore this message.</p><p>Click this link to reset your code: {link}.</p>"
+    }
+}

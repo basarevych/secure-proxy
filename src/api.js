@@ -317,7 +317,7 @@ Api.prototype.resetRequest = function (protocol, sid, req, res) {
                         return;
                     }
 
-                    var link = baseUrlQuery.protocol + '://' + baseUrlQuery.host
+                    var link = baseUrlQuery.protocol + '//' + baseUrlQuery.host
                         + '/secure-proxy/static/auth/reset-password.html#' + user['secret'];
                     promises.push(email.send({
                         subject:    gl.formatMessage('RESET_PASSWORD_SUBJECT'),
@@ -346,7 +346,7 @@ Api.prototype.resetRequest = function (protocol, sid, req, res) {
             .then(function (users) {
                 var promises = [];
                 users.forEach(function (user) {
-                    var link = baseUrlQuery.protocol + '://' + baseUrlQuery.host
+                    var link = baseUrlQuery.protocol + '//' + baseUrlQuery.host
                         + '/secure-proxy/static/auth/reset-otp.html#' + user['secret'];
                     promises.push(email.send({
                         subject:    gl.formatMessage('RESET_OTP_SUBJECT'),

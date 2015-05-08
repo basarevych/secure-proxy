@@ -179,7 +179,7 @@ function getRealPath(filename) {
     if (filename.indexOf('..') != -1)
         return false;
 
-    var path = __dirname + '/../front/' + filename;
+    var path = __dirname + '/../public/' + filename;
     if (!fs.existsSync(path))
         return false;
 

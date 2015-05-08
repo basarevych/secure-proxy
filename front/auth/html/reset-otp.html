@@ -4,28 +4,11 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta charset="UTF-8">
 
-        <link rel="stylesheet" href="/secure-proxy/static/bower_components/bootstrap/dist/css/bootstrap.min.css">
-        <link rel="stylesheet" href="/secure-proxy/static/bower_components/bootstrap/dist/css/bootstrap-theme.min.css">
-        <link rel="stylesheet" href="/secure-proxy/static/auth/css/index.css">
+        <link rel="stylesheet" href="/secure-proxy/static/auth/css/vendor.min.css">
+        <link rel="stylesheet" href="/secure-proxy/static/auth/css/app.min.css">
 
-        <script src="/secure-proxy/static/bower_components/jquery/dist/jquery.min.js"></script>
-        <script src="/secure-proxy/static/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
-        <script src="/secure-proxy/static/bower_components/jquery.qrcode/dist/jquery.qrcode.min.js"></script>
-
-        <script src="/secure-proxy/static/bower_components/cldrjs/dist/cldr.js"></script>
-        <script src="/secure-proxy/static/bower_components/cldrjs/dist/cldr/event.js"></script>
-        <script src="/secure-proxy/static/bower_components/cldrjs/dist/cldr/supplemental.js"></script>
-
-        <script src="/secure-proxy/static/bower_components/globalize/dist/globalize.js"></script>
-        <script src="/secure-proxy/static/bower_components/globalize/dist/globalize/message.js"></script>
-        <script src="/secure-proxy/static/bower_components/globalize/dist/globalize/number.js"></script>
-        <script src="/secure-proxy/static/bower_components/globalize/dist/globalize/plural.js"></script>
-        <script src="/secure-proxy/static/bower_components/globalize/dist/globalize/currency.js"></script>
-        <script src="/secure-proxy/static/bower_components/globalize/dist/globalize/date.js"></script>
-
-        <script src="/secure-proxy/static/auth/js/globalizer.js"></script>
-        <script src="/secure-proxy/static/auth/js/validator.js"></script>
-        <script src="/secure-proxy/static/auth/js/handlers.js"></script>
+        <script src="/secure-proxy/static/auth/js/vendor.min.js"></script>
+        <script src="/secure-proxy/static/auth/js/app.min.js"></script>
     </head>
     <body>
         <div class="centered-wrapper">
@@ -33,10 +16,10 @@
                 <div id="password-form" class="col-xs-offset-1 col-xs-10 col-sm-offset-2 col-sm-8 col-md-offset-3 col-md-6">
                     <div class="localization">
                         <a class="language" href="javascript:setLocale('en')">
-                            <img src="/secure-proxy/static/img/flags/en.gif"> en
+                            <img src="/secure-proxy/static/auth/img/flags/en.gif"> en
                         </a>
                         <a class="language" href="javascript:setLocale('ru')">
-                            <img src="/secure-proxy/static/img/flags/ru.gif"> ru
+                            <img src="/secure-proxy/static/auth/img/flags/ru.gif"> ru
                         </a>
                     </div>
                     <form class="form-horizontal" onsubmit="return false">
@@ -66,8 +49,8 @@
                     form.hide();
 
                 var promise = globalizer(
-                    '/secure-proxy/static/bower_components/cldr-data',
-                    '/secure-proxy/static/l10n',
+                    '/secure-proxy/static/auth/cldr',
+                    '/secure-proxy/static/auth/l10n',
                     locale
                 );
 

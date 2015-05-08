@@ -1,16 +1,16 @@
 #!/bin/sh
 
-npm install
+npm update
 if [ $? -ne 0 ]; then
     exit 1
 fi
 
 cd front/auth
-npm install
+npm update
 if [ $? -ne 0 ]; then
     exit 1
 fi
-node_modules/.bin/bower install --allow-root
+node_modules/.bin/bower update --allow-root
 if [ $? -ne 0 ]; then
     exit 1
 fi

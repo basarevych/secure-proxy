@@ -30,7 +30,7 @@ Globalize.prototype.getLocale = function (locale) {
         require("../node_modules/cldr-data/main/" + locale + "/dateFields"),
         require("../node_modules/cldr-data/main/" + locale + "/numbers")
     );
-    globalize.loadMessages(require("../front/l10n/" + locale));
+    globalize.loadMessages(require("../l10n/" + locale));
     globalize.locale(locale);
 
     this.locales[locale] = globalize;

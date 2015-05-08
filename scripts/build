@@ -1,0 +1,4 @@
+#!/bin/sh
+
+cd front/auth
+node_modules/.bin/grunt build
