@@ -28,6 +28,9 @@ module.exports = {
                 enable: true,
                 name: 'Example',
             },
+            http: {
+                base_url: 'http://coffin.lan:8000/',
+            }
         };
         this.sl.set('config', this.config);
 

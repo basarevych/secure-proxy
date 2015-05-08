@@ -291,11 +291,11 @@ Api.prototype.resetRequest = function (protocol, sid, req, res) {
         front = this.sl.get('front'),
         email = this.sl.get('email'),
         globalize = this.sl.get('globalize'),
+        config = this.sl.get('config'),
         query = url.parse(req.url, true),
         type = query.query['type'],
         userEmail = query.query['email'],
-        lang = query.query['lang'],
-        host = req.headers.host;
+        lang = query.query['lang'];
 
     if (typeof type == 'undefined' || typeof userEmail == 'undefined' || typeof lang == 'undefined')
         return front.returnBadRequest(res);
@@ -304,7 +304,8 @@ Api.prototype.resetRequest = function (protocol, sid, req, res) {
         return front.returnBadRequest(res);
 
     var gl = globalize.getLocale(lang);
-    var parts = host.split(':'), hostname = parts[0];
+
+    var baseUrlQuery = url.parse(config[protocol]['base_url']);
 
     if (type == 'password') {
         db.selectUsers({ email: userEmail })
@@ -316,12 +317,13 @@ Api.prototype.resetRequest = function (protocol, sid, req, res) {
                         return;
                     }
 
-                    var link = protocol + '://' + host + '/secure-proxy/static/auth/reset-password.html#' + user['secret'];
+                    var link = baseUrlQuery.protocol + '://' + baseUrlQuery.host
+                        + '/secure-proxy/static/auth/reset-password.html#' + user['secret'];
                     promises.push(email.send({
                         subject:    gl.formatMessage('RESET_PASSWORD_SUBJECT'),
                         to:         user['email'],
-                        text:       gl.formatMessage('RESET_PASSWORD_TEXT', { host: hostname, account: user['login'], link: link }),
-                        html:       gl.formatMessage('RESET_PASSWORD_HTML', { host: hostname, account: user['login'], link: link }),
+                        text:       gl.formatMessage('RESET_PASSWORD_TEXT', { host: baseUrlQuery.hostname, account: user['login'], link: link }),
+                        html:       gl.formatMessage('RESET_PASSWORD_HTML', { host: baseUrlQuery.hostname, account: user['login'], link: link }),
                     }));
                 });
 
@@ -344,12 +346,13 @@ Api.prototype.resetRequest = function (protocol, sid, req, res) {
             .then(function (users) {
                 var promises = [];
                 users.forEach(function (user) {
-                    var link = protocol + '://' + host + '/secure-proxy/static/auth/reset-otp.html#' + user['secret'];
+                    var link = baseUrlQuery.protocol + '://' + baseUrlQuery.host
+                        + '/secure-proxy/static/auth/reset-otp.html#' + user['secret'];
                     promises.push(email.send({
                         subject:    gl.formatMessage('RESET_OTP_SUBJECT'),
                         to:         user['email'],
-                        text:       gl.formatMessage('RESET_OTP_TEXT', { host: hostname, account: user['login'], link: link }),
-                        html:       gl.formatMessage('RESET_OTP_HTML', { host: hostname, account: user['login'], link: link }),
+                        text:       gl.formatMessage('RESET_OTP_TEXT', { host: baseUrlQuery.hostname, account: user['login'], link: link }),
+                        html:       gl.formatMessage('RESET_OTP_HTML', { host: baseUrlQuery.hostname, account: user['login'], link: link }),
                     }));
                 });
 
