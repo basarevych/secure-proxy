@@ -44,4 +44,30 @@ describe("Password functions", function () {
         expect($.ajax).toHaveBeenCalled();
         expect($('#login-messages')).toContainHtml('INVALID_LOGIN');
     });
+
+    it("work when next step is 'otp' with QR code", function () {
+        var counter = 0;
+        spyOn($, 'ajax').and.callFake(function (params) {
+            switch (++counter) {
+                case 1:
+                    params.success({ success: true, next: 'otp' });
+                    break;
+                case 2:
+                    params.success({ success: true, qr_code: 'foobar' });
+                    break;
+            }
+        });
+
+        var qrParams;
+        spyOn($.fn, 'qrcode').and.callFake(function (params) {
+            qrParams = params;
+        });
+
+        $('#login').val('foo');
+        $('#password').val('bar');
+        submitPassword();
+
+        expect($.fn.qrcode).toHaveBeenCalled();
+        expect(qrParams.text).toBe('foobar');
+    });
 });
