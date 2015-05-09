@@ -11,10 +11,10 @@ describe("Validator", function() {
         });
 
         var globalize = {
-            formatMessage: function () {}
+            formatMessage: function (msg) { return msg; }
         };
         window['globalize'] = globalize;
-        spyOn(globalize, 'formatMessage');
+        spyOn(globalize, 'formatMessage').and.callThrough();
     });
 
     afterEach(function () {
@@ -22,7 +22,28 @@ describe("Validator", function() {
     });
 
     it("checks for empty value", function() {
-        validateFormField($('input[name=field]'));
+        validateFormField($('#fixture input'));
+
         expect(globalize.formatMessage).toHaveBeenCalledWith('FIELD_EMPTY');
+
+        expect($('#fixture .form-group').hasClass('has-error')).toBeTruthy();
+
+        var errors = [];
+        $('#fixture .help-block ul li').each(function (index, el) {
+            errors.push($(el).text());
+        });
+        expect(errors.indexOf('FIELD_EMPTY')).not.toBe(-1);
+    });
+
+    it("clears previous errors", function () {
+        var success = validateFormField($('#fixture input'));
+        expect(success).toBeFalsy();
+
+        $('#fixture input').val('foobar');
+        success = validateFormField($('#fixture input'));
+        expect(success).toBeTruthy();
+
+        expect($('#fixture .form-group').hasClass('has-error')).toBeFalsy();
+        expect($('#fixture .help-block ul').html()).toBe('');
     });
 });
