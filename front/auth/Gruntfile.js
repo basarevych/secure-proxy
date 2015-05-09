@@ -125,7 +125,8 @@ module.exports = function(grunt) {
             ],
             options: {
                 vendor: [
-                    '<%= concat.vendorjs.src %>'
+                    '<%= concat.vendorjs.src %>',
+                    'node_modules/jasmine-jquery/lib/jasmine-jquery.js'
                 ],
                 helpers: [
                     'test/helpers/**/*.js'

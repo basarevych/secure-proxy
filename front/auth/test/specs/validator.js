@@ -1,3 +1,5 @@
+'use strict'
+
 describe("Validator", function() {
     beforeEach(function (done) {
         $.ajax({
@@ -26,7 +28,7 @@ describe("Validator", function() {
 
         expect(globalize.formatMessage).toHaveBeenCalledWith('FIELD_EMPTY');
 
-        expect($('#fixture .form-group').hasClass('has-error')).toBeTruthy();
+        expect($('#fixture .form-group')).toHaveClass('has-error');
 
         var errors = [];
         $('#fixture .help-block ul li').each(function (index, el) {
@@ -43,7 +45,7 @@ describe("Validator", function() {
         success = validateFormField($('#fixture input'));
         expect(success).toBeTruthy();
 
-        expect($('#fixture .form-group').hasClass('has-error')).toBeFalsy();
-        expect($('#fixture .help-block ul').html()).toBe('');
+        expect($('#fixture .form-group')).not.toHaveClass('has-error');
+        expect($('#fixture .help-block ul')).toBeEmpty();
     });
 });

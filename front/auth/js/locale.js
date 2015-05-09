@@ -1,7 +1,5 @@
 'use strict';
 
-var gl = null, currectLocale = null;
-
 function globalizer(cldrBasePath, l10nBasePath, locale) {
     var resources = [
         cldrBasePath + '/main/' + locale + '/currencies.json',
@@ -42,8 +40,6 @@ function globalizer(cldrBasePath, l10nBasePath, locale) {
 }
 
 function loadLocale(locale) {
-    currentLocale = locale;
-
     var form = $('#main-form');
     if (form.css('display') != 'none')
         form.hide();
@@ -56,7 +52,8 @@ function loadLocale(locale) {
 
     promise
         .then(function (globalize) {
-            gl = window['globalize'] = globalize;
+            window['globalize'] = globalize;
+            window['locale'] = locale;
             initPage();
         });
 }

@@ -1,6 +1,7 @@
 'use strict'
 
 function submitPassword() {
+    var gl = window['globalize'];
     var login = validateFormField($('#login')),
         password = validateFormField($('#password'));
 
@@ -78,6 +79,7 @@ function submitPassword() {
 }
 
 function resetPassword() {
+    var gl = window['globalize'];
     var messages = $('#reset-messages');
     messages.empty();
     $('#email').val(''),
@@ -103,7 +105,7 @@ function resetPassword() {
                 data: {
                     type: 'password',
                     email: $('#email').val(),
-                    lang: currentLocale,
+                    lang: window['locale'],
                 },
                 success: function (data) {
                     if (data.success) {
@@ -130,6 +132,7 @@ function resetPassword() {
 }
 
 function doResetPassword() {
+    var gl = window['globalize'];
     var newpassword1 = validateFormField($('#newpassword1')),
         newpassword2 = validateFormField($('#newpassword2'));
     var parts = window.location.toString().split('#');
@@ -176,125 +179,6 @@ function doResetPassword() {
                 var msg = $('<div></div>');
                 msg.addClass('alert alert-danger')
                    .text(gl.formatMessage(expired ? 'PAGE_EXPIRED' : 'PASSWORD_RESET_FAILURE'))
-                   .appendTo(messages);
-            }
-        }
-    });
-}
-
-function submitOtp() {
-    var otp = validateFormField($('#otp'));
-
-    if (!otp) {
-        $('#otp').focus();
-        return;
-    }
-
-    $.ajax({
-        url: '/secure-proxy/api/otp',
-        method: 'GET',
-        data: {
-            action: 'check',
-            otp: $('#otp').val(),
-        },
-        success: function (data) {
-            var messages = $('#otp-messages');
-            messages.empty();
-
-            if (data.success) {
-                $('#main-form').slideUp(function () { window.location.reload(); });
-                return;
-            } else {
-                if (data.next == 'password') {
-                    window.location.reload();
-                    return;
-                }
-                var msg = $('<div></div>');
-                msg.addClass('alert alert-danger')
-                   .text(gl.formatMessage('INVALID_OTP'))
-                   .appendTo(messages);
-            }
-        }
-    });
-}
-
-function resetOtp() {
-    var messages = $('#reset-messages');
-    messages.empty();
-    $('#email').val(''),
-    $('#modal-form .form-group').removeClass('has-error');
-    $('#modal-form .help-block ul').empty();
-
-    $('#modal-submit')
-        .off('click')
-        .on('click', function () {
-            messages.empty();
-
-            var email = validateFormField($('#email'));
-
-            if (!email) {
-                $('#email').focus();
-                return;
-            }
-
-            $('#modal-submit').addClass('disabled').prop('disabled', true);
-            $.ajax({
-                url: '/secure-proxy/api/reset-request',
-                method: 'GET',
-                data: {
-                    type: 'otp',
-                    email: $('#email').val(),
-                    lang: currentLocale,
-                },
-                success: function (data) {
-                    if (data.success) {
-                        var msg = $('<div></div>');
-                        msg.addClass('alert alert-success')
-                           .text(gl.formatMessage('EMAIL_SENT'))
-                           .appendTo(messages);
-                    } else {
-                        var msg = $('<div></div>');
-                        msg.addClass('alert alert-danger')
-                           .text(gl.formatMessage('INVALID_EMAIL'))
-                           .appendTo(messages);
-                        $('#modal-submit').removeClass('disabled').prop('disabled', false);
-                    }
-                },
-            });
-        });
-
-    $('#modal-title').text(gl.formatMessage('RESET_OTP_TITLE'));
-    $('#modal-submit').removeClass('disabled').prop('disabled', false);
-    $('#modal-form').modal('show');
-    $('#email').focus();
-}
-
-function doResetOtp() {
-    var messages = $('#password-messages');
-    var parts = window.location.toString().split('#');
-    var secret = parts.length >= 2 && parts[1];
-
-    $.ajax({
-        url: '/secure-proxy/api/otp',
-        method: 'GET',
-        data: {
-            action: 'reset',
-            secret: secret,
-        },
-        success: function (data) {
-            messages.empty();
-
-            if (data.success) {
-                var msg = $('<div></div>');
-                msg.addClass('alert alert-success')
-                   .text(gl.formatMessage('CODE_RESET_SUCCESS'))
-                   .appendTo(messages);
-                $('#password-section').hide();
-            } else {
-                var expired = data.reason && data.reason == 'expired';
-                var msg = $('<div></div>');
-                msg.addClass('alert alert-danger')
-                   .text(gl.formatMessage(expired ? 'PAGE_EXPIRED' : 'CODE_RESET_FAILURE'))
                    .appendTo(messages);
             }
         }

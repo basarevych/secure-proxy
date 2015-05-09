@@ -134,6 +134,8 @@
         </div>
         <script>
             function initPage() {
+                var gl = window['globalize'];
+
                 $('#email-label').text(gl.formatMessage('EMAIL_LABEL') + ':');
                 $('#modal-close').text(gl.formatMessage('CLOSE_LABEL'));
                 $('#modal-submit').text(gl.formatMessage('SUBMIT_LABEL'));
