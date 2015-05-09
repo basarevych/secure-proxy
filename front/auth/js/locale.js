@@ -1,5 +1,7 @@
 'use strict';
 
+var gl = null, currectLocale = null;
+
 function globalizer(cldrBasePath, l10nBasePath, locale) {
     var resources = [
         cldrBasePath + '/main/' + locale + '/currencies.json',
@@ -37,4 +39,36 @@ function globalizer(cldrBasePath, l10nBasePath, locale) {
         getResource(i);
 
     return loaded.promise();
+}
+
+function loadLocale(locale) {
+    currentLocale = locale;
+
+    var form = $('#main-form');
+    if (form.css('display') != 'none')
+        form.hide();
+
+    var promise = globalizer(
+        '/secure-proxy/static/auth/cldr',
+        '/secure-proxy/static/auth/l10n',
+        locale
+    );
+
+    promise
+        .then(function (globalize) {
+            gl = window['globalize'] = globalize;
+            initPage();
+        });
+}
+
+function setLocale(locale) {
+    $.ajax({
+        url: '/secure-proxy/api/locale',
+        data: {
+            set: locale,
+        },
+        success: function (data) {
+            loadLocale(data.locale);
+        }
+    });
 }
