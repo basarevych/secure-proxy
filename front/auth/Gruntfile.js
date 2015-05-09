@@ -119,6 +119,27 @@ module.exports = function(grunt) {
             },
         },
 
+        jasmine: {
+            src: [
+                '<%= concat.appjs.src %>'
+            ],
+            options: {
+                vendor: [
+                    '<%= concat.vendorjs.src %>'
+                ],
+                helpers: [
+                    'test/helpers/**/*.js'
+                ],
+                specs: [
+                    'test/specs/**/*.js'
+                ],
+                styles: [
+                    '<%= concat.vendorcss.src %>',
+                    '<%= concat.appcss.src %>'
+                ],
+            }
+        },
+
         watch: {
             files: [ '**/*' ],
             tasks: ['build'],
@@ -126,12 +147,13 @@ module.exports = function(grunt) {
     });
 
     // These plugins provide necessary tasks.
-    grunt.loadNpmTasks('grunt-contrib-watch');
+    grunt.loadNpmTasks('grunt-contrib-copy');
     grunt.loadNpmTasks('grunt-contrib-concat');
     grunt.loadNpmTasks('grunt-contrib-uglify');
     grunt.loadNpmTasks('grunt-contrib-cssmin');
-    grunt.loadNpmTasks('grunt-contrib-copy');
+    grunt.loadNpmTasks('grunt-contrib-watch');
+    grunt.loadNpmTasks('grunt-contrib-jasmine');
 
-    grunt.registerTask('build', ['copy', 'concat', 'uglify', 'cssmin']);
-    grunt.registerTask('unit-test', ['dev', 'karma']);
+    grunt.registerTask('build', ['concat', 'uglify', 'cssmin']);
+    grunt.registerTask('default', ['jasmine', 'copy', 'build']);
 };

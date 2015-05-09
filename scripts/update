@@ -6,10 +6,12 @@ if [ $? -ne 0 ]; then
 fi
 
 cd front/auth
+
 npm update
 if [ $? -ne 0 ]; then
     exit 1
 fi
+
 node_modules/.bin/bower update --allow-root
 if [ $? -ne 0 ]; then
     exit 1

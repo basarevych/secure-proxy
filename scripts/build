@@ -1,4 +1,13 @@
 #!/bin/sh
 
 cd front/auth
+
+node_modules/.bin/grunt copy
+if [ $? -ne 0 ]; then
+    exit 1
+fi
+
 node_modules/.bin/grunt build
+if [ $? -ne 0 ]; then
+    exit 1
+fi
