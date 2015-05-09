@@ -4,7 +4,8 @@ describe("Validator", function() {
             url: 'test/fixtures/validator.html',
             dataType: 'html',
             success: function (html) {
-                $('body').append(html);
+                var fixture = $('<div id="fixture"></div>');
+                $('body').append(fixture.append(html));
                 done();
             }
         });
@@ -14,6 +15,10 @@ describe("Validator", function() {
         };
         window['globalize'] = globalize;
         spyOn(globalize, 'formatMessage');
+    });
+
+    afterEach(function () {
+        $('#fixture').remove();
     });
 
     it("checks for empty value", function() {
