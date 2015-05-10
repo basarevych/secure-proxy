@@ -33,6 +33,28 @@ describe("Password", function () {
             expect($('#password')).toBeFocused();
         });
 
+        it("does correct ajax requests", function () {
+            var counter = 0;
+            spyOn($, 'ajax').and.callFake(function (params) {
+                switch (++counter) {
+                    case 1:
+                        params.success({ success: true, next: 'otp' });
+                        expect(params.url).toBe('/secure-proxy/api/auth');
+                        expect(params.data.action).toBe('check');
+                        break;
+                    case 2:
+                        params.success({ success: true, qr_code: 'foobar' });
+                        expect(params.url).toBe('/secure-proxy/api/otp');
+                        expect(params.data.action).toBe('get');
+                        break;
+                }
+            });
+
+            $('#login').val('foo');
+            $('#password').val('bar');
+            submitPassword();
+        });
+
         it("handles invalid credentials", function () {
             spyOn($, 'ajax').and.callFake(function (params) {
                 params.success({ success: false });
@@ -75,13 +97,9 @@ describe("Password", function () {
                 switch (++counter) {
                     case 1:
                         params.success({ success: true, next: 'otp' });
-                        expect(params.url).toBe('/secure-proxy/api/auth');
-                        expect(params.data.action).toBe('check');
                         break;
                     case 2:
                         params.success({ success: true, qr_code: 'foobar' });
-                        expect(params.url).toBe('/secure-proxy/api/otp');
-                        expect(params.data.action).toBe('get');
                         break;
                 }
             });
@@ -176,6 +194,62 @@ describe("Password", function () {
             submitPassword();
 
             expect(window.location.reload).toHaveBeenCalled();
+        });
+    });
+
+    describe("Reset", function () {
+        it("checks and focus empty fields", function () {
+            resetPassword();
+            $('#modal-submit').trigger('click');
+            expect($('#email')).toBeFocused();
+        });
+
+        it("does correct ajax request", function () {
+            spyOn($, 'ajax').and.callFake(function (params) {
+                params.success({ success: true });
+                expect(params.url).toBe('/secure-proxy/api/reset-request');
+                expect(params.data.type).toBe('password');
+            });
+
+            resetPassword();
+            $('#email').val('foobar');
+            $('#modal-submit').trigger('click');
+        });
+
+        it("handles success", function () {
+            spyOn($, 'ajax').and.callFake(function (params) {
+                params.success({ success: true });
+            });
+
+            resetPassword();
+            $('#email').val('foobar');
+            $('#modal-submit').trigger('click');
+
+            expect($('#reset-messages')).toHaveText('EMAIL_SENT');
+        });
+
+        it("handles extern password", function () {
+            spyOn($, 'ajax').and.callFake(function (params) {
+                params.success({ success: false, reason: 'extern-password' });
+            });
+
+            resetPassword();
+            $('#email').val('foobar');
+            $('#modal-submit').trigger('click');
+
+            expect($('#reset-messages')).toHaveText('EXTERN_PASSWORD');
+        });
+
+        it("handles invalid email", function () {
+            spyOn($, 'ajax').and.callFake(function (params) {
+                params.success({ success: false });
+            });
+
+            resetPassword();
+            $('#email').val('foobar');
+            $('#modal-submit').trigger('click');
+
+            expect($('#reset-messages')).toHaveText('INVALID_EMAIL');
         });
     });
 });
