@@ -39,8 +39,9 @@ function submitPassword() {
                             action: 'get'
                         },
                         success: function (data) {
-                            if (!data.success && data.next == 'password') {
-                                window.location.reload();
+                            if (!data.success) {
+                                if (data.next == 'password')
+                                    window.location.reload();
                                 return;
                             }
                             if (typeof data['qr_code'] == 'undefined') {
