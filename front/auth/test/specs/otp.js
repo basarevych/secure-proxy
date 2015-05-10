@@ -87,7 +87,7 @@ describe("OTP", function () {
         });
     });
 
-    describe("Reset", function () {
+    describe("Reset request", function () {
         it("checks and focus empty fields", function () {
             resetOtp();
             $('#modal-submit').trigger('click');

@@ -197,7 +197,7 @@ describe("Password", function () {
         });
     });
 
-    describe("Reset", function () {
+    describe("Reset request", function () {
         it("checks and focus empty fields", function () {
             resetPassword();
             $('#modal-submit').trigger('click');
