@@ -19,5 +19,8 @@
     "grunt-contrib-uglify": "~0.7.0",
     "grunt-contrib-watch": "~0.6.1",
     "jasmine-jquery": "^2.0.6"
+  },
+  "scripts": {
+    "test": "./node_modules/.bin/grunt jasmine"
   }
 }

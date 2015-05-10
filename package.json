@@ -3,9 +3,6 @@
   "version": "0.0.1",
   "description": "HTTP reverse proxy with login, password and Google Authenticator protection",
   "main": "src/index.js",
-  "scripts": {
-    "test": "./node_modules/.bin/nodeunit test"
-  },
   "keywords": [
     "nodejs",
     "reverse",
@@ -31,6 +28,10 @@
     "sqlite3": "~3.0.5"
   },
   "devDependencies": {
+    "jasmine-node": "~1.14.5",
     "nodeunit": "~0.9.1"
+  },
+  "scripts": {
+    "test": "./node_modules/.bin/jasmine-node test"
   }
 }
