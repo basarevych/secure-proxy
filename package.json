@@ -28,8 +28,7 @@
     "sqlite3": "~3.0.5"
   },
   "devDependencies": {
-    "jasmine-node": "~1.14.5",
-    "nodeunit": "~0.9.1"
+    "jasmine-node": "~1.14.5"
   },
   "scripts": {
     "test": "./node_modules/.bin/jasmine-node test"
