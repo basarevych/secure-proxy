@@ -72,6 +72,7 @@ Api.prototype.logout = function (protocol, sid, req, res) {
 
 Api.prototype.auth = function (protocol, sid, req, res) {
     var db = this.sl.get('database'),
+        ldap = this.sl.get('ldap'),
         front = this.sl.get('front'),
         config = this.sl.get('config'),
         query = url.parse(req.url, true),
@@ -88,6 +89,12 @@ Api.prototype.auth = function (protocol, sid, req, res) {
             return front.returnBadRequest(res);
 
         db.checkUserPassword(login, password)
+            .then(function (match) {
+                if (match)
+                    return match;
+
+                return ldap.authenticate(login, password);
+            })
             .then(function (match) {
                 if (match) {
                     db.selectSessions({ sid: sid })

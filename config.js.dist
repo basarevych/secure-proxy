@@ -11,6 +11,14 @@ module.exports = {
         name: 'Secure Proxy',       // Google Authenticator account name
     },                              // (will be visible to user)
 
+    ldap: {
+        enable: false,              // Enable LDAP auth
+        url: 'ldap://192.168.0.1',  // The server
+        domain: 'HQ',
+        users_group: 'ou=users, ou=company, dc=hq, dc=company, dc=local',
+        email_attr_name: 'mail',    // Retrieve user email address
+    },
+
     email: {
         host: '127.0.0.1',          // SMTP server
         port: 25,

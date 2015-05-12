@@ -11,6 +11,7 @@ var fs              = require('fs'),
     Front           = require('./front.js'),
     Api             = require('./api.js'),
     Email           = require('./email.js'),
+    Ldap            = require('./ldap.js'),
     Globalize       = require('./globalize.js'),
     Console         = require('./console.js');
 
@@ -36,6 +37,7 @@ var sl          = new ServiceLocator(),
     front       = new Front(sl),
     api         = new Api(sl),
     email       = new Email(sl),
+    ldap        = new Ldap(sl),
     globalize   = new Globalize(sl),
     cons        = new Console(sl),
     config      = sl.get('config');

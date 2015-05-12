@@ -10,7 +10,7 @@ var q               = require('q'),
     Globalize       = require('../src/globalize.js');
 
 describe("API", function () {
-    var sl, db, front, api, email, globalize;
+    var sl, db, front, api, email, globalize, ldap;
     var res;
 
     beforeEach(function () {
@@ -37,6 +37,9 @@ describe("API", function () {
         sl.set('config', config);
 
         res = createSpyObj('res', [ 'setHeader', 'writeHead', 'end' ]);
+
+        ldap = createSpyObj('ldap', [ 'authenticate' ]);
+        sl.set('ldap', ldap);
     });
 
     it("locale sets cookie", function (done) {
@@ -110,7 +113,7 @@ describe("API", function () {
             });
     });
 
-    it("auth with valid password", function (done) {
+    it("auth with valid db password", function (done) {
         var req = {
             headers: {},
             url: '/secure-proxy/api/auth?action=check&login=login&password=password',
@@ -134,11 +137,48 @@ describe("API", function () {
             });
     });
 
+    it("auth with valid ldap password", function (done) {
+        var req = {
+            headers: {},
+            url: '/secure-proxy/api/auth?action=check&login=login&password=password',
+        };
+
+        ldap.authenticate.andCallFake(function (login, password) {
+            var defer = q.defer();
+            defer.resolve(true);
+            return defer.promise;
+        });
+
+        res.end.andCallFake(function (html) {
+            var result = JSON.parse(html);
+            expect(result['success']).toBeTruthy();
+            expect(result['next']).toBe('otp');
+            expect(ldap.authenticate).toHaveBeenCalledWith('login', 'password');
+            db.selectSessions({ sid: 'sid' })
+                .then(function (sessions) {
+                    var session = sessions.length && sessions[0];
+                    expect(session['auth_password']).toBeTruthy();
+                    done();
+                });
+        });
+
+        db.createUser('login', null, 'foo@bar')
+            .then(function () {
+                api.auth('http', 'sid', req, res);
+            });
+    });
+
     it("auth with invalid password", function (done) {
         var req = {
             headers: {},
             url: '/secure-proxy/api/auth?action=check&login=login&password=password',
         };
+
+        ldap.authenticate.andCallFake(function (login, password) {
+            var defer = q.defer();
+            defer.resolve(false);
+            return defer.promise;
+        });
 
         res.end.andCallFake(function (html) {
             var result = JSON.parse(html);
