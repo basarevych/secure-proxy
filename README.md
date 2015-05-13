@@ -76,7 +76,7 @@ Config
 
 * **target**
 
-  The server wi will be proxying requests
+  The server we will be proxying requests for
 
 * **namespace**
 
@@ -86,20 +86,28 @@ Config
 
   Secure proxy will drop priviliges to this user and group (if ran by root).
 
-* **otp**: {
+* **otp**:
+
+  ```js
+  {
     enable: true,
     name: 'Secure Proxy',
-  },
+  }
+  ```
 
   Enable/Disable OTP (One Time Password) protection (Google Authenticator).
 
-* **ldap**: {
+* **ldap**:
+
+  ```js
+  {
     enable: false,
     url: 'ldap://192.168.0.1',
     domain: 'HQ',
     users_group: 'ou=users, ou=company, dc=hq, dc=company, dc=local',
     email_attr_name: 'mail',
-  },
+  }
+  ```
 
   Enable/Disable LDAP users. For example, if user login is 'user' the proxy will try to
   authenticate 'user@HQ' user with the given password. If successful it will then search
@@ -107,21 +115,29 @@ Config
   look for 'mail' attribute to get user email address. If all is OK the user is created
   in the local database and is granted access.
 
-* **email**: {
+* **email**:
+
+  ```js
+  {
     host: '127.0.0.1',
     port: 25,
     ssl: false,
     from: 'www@localhost',
-  },
+  }
+  ```
 
   SMTP server (outgoing mail) parameters
 
-* **http**: {
+* **http**:
+
+  ```js
+  {
     enable: true,
     host: 'example.com',
     port: 80,
     base_url: 'http://example.com',
-  },
+  }
+  ```
 
   Enable/Disable HTTP proxy on the given host:port. 
 
@@ -129,14 +145,18 @@ Config
 
   **base_url** is used to construct password reset email links.
 
-* **https**: {
+* **https**:
+
+  ```
+  {
     enable: false,
     host: 'example.com',
     port: 443,
     base_url: 'https://example.com',
     key: '/etc/certs/server.unencrypted.key',
     cert: '/etc/certs/server.crt',
-  },
+  }
+  ```
 
   Enable/Disable HTTPS proxy on the given host:port.
 
