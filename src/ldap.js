@@ -59,7 +59,7 @@ Ldap.prototype.authenticate = function (login, password) {
 
             search.on('searchEntry', function (entry) {
                 if (!entry.object) {
-                    defer.reject();
+                    defer.resolve(false);
                     return;
                 }
 
