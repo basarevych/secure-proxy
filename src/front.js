@@ -109,6 +109,8 @@ Front.prototype.requestListener = function (protocol, req, res) {
                     switch (urlParts[3]) {
                         case 'locale':
                             return api.locale(protocol, sid, req, res);
+                        case 'status':
+                            return api.status(protocol, sid, req, res);
                         case 'logout':
                             return api.logout(protocol, sid, req, res);
                         case 'auth':

@@ -43,6 +43,30 @@ Api.prototype.locale = function (protocol, sid, req, res) {
     res.end(JSON.stringify({ locale: result }));
 };
 
+Api.prototype.status = function (protocol, sid, req, res) {
+    var db = this.sl.get('database'),
+        front = this.sl.get('front');
+
+    db.selectSessions({ sid: sid })
+        .then(function (sessions) {
+            var session = sessions.length && sessions[0];
+            if (session) {
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({
+                    authenticated: true,
+                    login: session['login'],
+                }));
+                return;
+            }
+
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ authenticated: false }));
+        })
+        .catch(function (err) {
+            console.error(err);
+        });
+};
+
 Api.prototype.logout = function (protocol, sid, req, res) {
     var db = this.sl.get('database'),
         front = this.sl.get('front');
