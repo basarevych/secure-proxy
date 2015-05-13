@@ -47,6 +47,9 @@ Api.prototype.status = function (protocol, sid, req, res) {
     var db = this.sl.get('database'),
         front = this.sl.get('front');
 
+    if (typeof sid == 'undefined')
+        return front.returnBadRequest(res);
+
     db.selectSessions({ sid: sid })
         .then(function (sessions) {
             var session = sessions.length && sessions[0];

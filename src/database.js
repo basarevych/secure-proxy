@@ -244,6 +244,11 @@ Database.prototype.checkUserPassword = function (login, password) {
     var engine = this.getEngine(),
         defer = q.defer();
 
+    if (!login) {
+        defer.reject("Invalid login");
+        return defer.promise;
+    }
+
     this.selectUsers({ login: login })
         .then(function (users) {
             var user = users.length && users[0];
@@ -370,6 +375,11 @@ Database.prototype.checkUserOtpKey = function (login, otp) {
     var engine = this.getEngine(),
         defer = q.defer();
 
+    if (!login) {
+        defer.reject("Invalid login");
+        return defer.promise;
+    }
+
     this.selectUsers({ login: login })
         .then(function (users) {
             var user = users.length && users[0];
@@ -480,6 +490,11 @@ Database.prototype.createSession = function (login, sid) {
     var engine = this.getEngine(),
         defer = q.defer(),
         now = new Date().getTime();
+
+    if (!login) {
+        defer.reject("Invalid login");
+        return defer.promise;
+    }
 
     this.selectUsers({ login: login })
         .then(function (users) {
