@@ -39,7 +39,7 @@ body {
     content: '\e090';
 }
 
-#login-form, #password-form {
+#main-form {
     display: none;
     background-color: #ffffff;
     border: 1px solid #999999;
