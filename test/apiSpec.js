@@ -96,6 +96,21 @@ describe("API", function () {
         api.locale('http', 'sid', req, res);
     });
 
+    it("status", function (done) {
+        res.end.andCallFake(function (html) {
+            var result = JSON.parse(html);
+            expect(result['authenticated']).toBeTruthy();
+            expect(result['login']).toBe('login');
+            done();
+        });
+
+        db.createUser('login', 'password', 'foo@bar')
+            .then(function () { return db.createSession('login', 'sid'); })
+            .then(function () {
+                api.status('http', 'sid', undefined, res);
+            });
+    });
+
     it("logout", function (done) {
         spyOn(db, 'deleteSession').andCallThrough();
 

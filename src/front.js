@@ -81,7 +81,33 @@ Front.prototype.requestListener = function (protocol, req, res) {
         urlParts = query.pathname.split('/');
 
     if (typeof sid == 'undefined')
-        sid = cookies[config['namespace'] + 'sid'],
+        sid = cookies[config['namespace'] + 'sid'];
+
+    if (typeof sid == 'undefined') {
+        var defer = q.defer();
+
+        crypto.randomBytes(16, function (ex, buf) {
+            if (ex)
+                defer.reject(ex);
+            else
+                defer.resolve(buf.toString('hex'));
+        });
+
+        defer.promise
+            .then(function (random) {
+                var header = config['namespace'] + 'sid=' + random + '; path=/';
+                res.setHeader('set-cookie', header);
+            })
+            .then(function () {
+                me.returnFile('auth/index.html', res);
+            })
+            .catch(function (err) {
+                console.error(err);
+                me.returnInternalError(res);
+            });
+
+        return;
+    }
 
     db.selectSessions({ sid: sid })
         .then(function (sessions) {
@@ -131,32 +157,6 @@ Front.prototype.requestListener = function (protocol, req, res) {
                         proxy.web(req, res);
                     });
             } else {
-                if (typeof sid == 'undefined') {
-                    var defer = q.defer();
-
-                    crypto.randomBytes(16, function (ex, buf) {
-                        if (ex)
-                            defer.reject(ex);
-                        else
-                            defer.resolve(buf.toString('hex'));
-                    });
-
-                    defer.promise
-                        .then(function (random) {
-                            var header = config['namespace'] + 'sid=' + random + '; path=/';
-                            res.setHeader('set-cookie', header);
-                        })
-                        .then(function () {
-                            me.returnFile('auth/index.html', res);
-                        })
-                        .catch(function (err) {
-                            console.error(err);
-                            me.returnInternalError(res);
-                        });
-
-                    return;
-                }
-
                 me.returnFile('auth/index.html', res);
             }
         })
