@@ -19,8 +19,6 @@ Ldap.prototype.getClient = function () {
 
     var client = ldap.createClient({
         url: config['ldap']['url'],
-        timeout: 3000,
-        connectTimeout: 3000,
     });
 
     this.client = client;
