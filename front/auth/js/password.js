@@ -22,6 +22,7 @@ function submitPassword() {
         .addClass('disabled')
         .prop('disabled', true)
         .html('<img src="/secure-proxy/static/auth/img/loader.gif">');
+    $('#reset-password-button').hide();
 
     $.ajax({
         url: '/secure-proxy/api/auth',
@@ -36,6 +37,7 @@ function submitPassword() {
                 .removeClass('disabled')
                 .prop('disabled', false)
                 .text(gl.formatMessage('SUBMIT_LABEL'));
+            $('#reset-password-button').show();
 
             if (data.success) {
                 if (data.next == 'done') {
@@ -94,6 +96,7 @@ function submitPassword() {
                 .removeClass('disabled')
                 .prop('disabled', false)
                 .text(gl.formatMessage('SUBMIT_LABEL'));
+            $('#reset-password-button').show();
 
             alert(gl.formatMessage('INTERNAL_ERROR'));
         },

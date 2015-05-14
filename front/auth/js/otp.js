@@ -13,6 +13,7 @@ function submitOtp() {
         .addClass('disabled')
         .prop('disabled', true)
         .html('<img src="/secure-proxy/static/auth/img/loader.gif">');
+    $('#reset-otp-button').hide();
 
     $.ajax({
         url: '/secure-proxy/api/otp',
@@ -29,6 +30,7 @@ function submitOtp() {
                 .removeClass('disabled')
                 .prop('disabled', false)
                 .text(gl.formatMessage('SUBMIT_LABEL'));
+            $('#reset-otp-button').show();
 
             if (data.success) {
                 $('#main-form').slideUp(function () { window.location.reload(); });
@@ -49,6 +51,7 @@ function submitOtp() {
                 .removeClass('disabled')
                 .prop('disabled', false)
                 .text(gl.formatMessage('SUBMIT_LABEL'));
+            $('#reset-otp-button').show();
 
             alert(gl.formatMessage('INTERNAL_ERROR'));
         },
