@@ -67,12 +67,16 @@ Api.prototype.status = function (protocol, sid, req, res) {
         })
         .catch(function (err) {
             console.error(err);
+            front.returnInternalError(res);
         });
 };
 
 Api.prototype.logout = function (protocol, sid, req, res) {
     var db = this.sl.get('database'),
         front = this.sl.get('front');
+
+    if (typeof sid == 'undefined')
+        return front.returnBadRequest(res);
 
     db.sessionExists(sid)
         .then(function (exists) {
@@ -94,6 +98,7 @@ Api.prototype.logout = function (protocol, sid, req, res) {
         })
         .catch(function (err) {
             console.error(err);
+            front.returnInternalError(res);
         });
 };
 
@@ -135,8 +140,7 @@ Api.prototype.auth = function (protocol, sid, req, res) {
                                         defer.resolve();
                                     })
                                     .catch(function (err) {
-                                        console.error(err);
-                                        front.returnInternalError(res);
+                                        defer.reject(err);
                                     });
                             } else {
                                 defer.resolve();
@@ -166,6 +170,10 @@ Api.prototype.auth = function (protocol, sid, req, res) {
 
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: false }));
+            })
+            .catch(function (err) {
+                console.error(err);
+                front.returnInternalError(res);
             });
     } else if (action == 'set') {
         if (typeof secret == 'undefined')
@@ -374,6 +382,14 @@ Api.prototype.resetRequest = function (protocol, sid, req, res) {
                             res.end(JSON.stringify({ success: (promises.length > 0) }));
                         }
                     });
+                    .catch(function (err) {
+                        console.error(err);
+                        front.returnInternalError(res);
+                    });
+            })
+            .catch(function (err) {
+                console.error(err);
+                front.returnInternalError(res);
             });
     } else if (type == 'otp') {
         db.selectUsers({ email: userEmail })
@@ -394,7 +410,15 @@ Api.prototype.resetRequest = function (protocol, sid, req, res) {
                     .then(function () {
                         res.writeHead(200, { 'Content-Type': 'application/json' });
                         res.end(JSON.stringify({ success: (promises.length > 0) }));
+                    })
+                    .catch(function (err) {
+                        console.error(err);
+                        front.returnInternalError(res);
                     });
+            })
+            .catch(function (err) {
+                console.error(err);
+                front.returnInternalError(res);
             });
     } else {
         return front.returnBadRequest(res);

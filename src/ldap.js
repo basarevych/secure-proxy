@@ -19,9 +19,10 @@ Ldap.prototype.getClient = function () {
 
     var client = ldap.createClient({
         url: config['ldap']['url'],
+        timeout: 5000,
     });
 
-    // we are not saving client to 'this' because of bug in ldapjs:
+    // we are not saving client to 'this' because
     // client must be recreated before each bind
     return client;
 };
@@ -39,6 +40,7 @@ Ldap.prototype.authenticate = function (login, password) {
 
     client.bind(login + '@' + config['ldap']['domain'], password, function (err) {
         if (err) {
+console.error(err);
             defer.resolve(false);
             return;
         }
