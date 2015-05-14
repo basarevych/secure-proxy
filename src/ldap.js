@@ -12,7 +12,7 @@ function Ldap(serviceLocator) {
 module.exports = Ldap;
 
 Ldap.prototype.getClient = function () {
-    if (typeof this.client != 'undefined')
+    if (typeof this.client != 'undefined')  // for tests
         return this.client;
 
     var config = this.sl.get('config');
@@ -21,7 +21,8 @@ Ldap.prototype.getClient = function () {
         url: config['ldap']['url'],
     });
 
-    this.client = client;
+    // we are not saving client to 'this' because of bug in ldapjs:
+    // client must be recreated before each bind
     return client;
 };
 
