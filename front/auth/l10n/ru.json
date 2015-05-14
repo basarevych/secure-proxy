@@ -1,6 +1,7 @@
 {
     "ru": {
         "PAGE_TITLE": "Запретная зона",
+        "INTERNAL_ERROR": "Произошла ошибка. Пожалуйста, попробуйте повторить позже.",
         "RESET_PASSWORD_TITLE": "Сброс пароля",
         "RESET_OTP_TITLE": "Сброс кода Google Authenticator",
         "EMAIL_LABEL": "Электронная почта",

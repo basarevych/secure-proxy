@@ -381,7 +381,7 @@ Api.prototype.resetRequest = function (protocol, sid, req, res) {
                             res.writeHead(200, { 'Content-Type': 'application/json' });
                             res.end(JSON.stringify({ success: (promises.length > 0) }));
                         }
-                    });
+                    })
                     .catch(function (err) {
                         console.error(err);
                         front.returnInternalError(res);

@@ -1,6 +1,7 @@
 {
     "en": {
         "PAGE_TITLE": "Restricted area",
+        "INTERNAL_ERROR": "An error occured. Please try again later",
         "RESET_PASSWORD_TITLE": "Reset password",
         "RESET_OTP_TITLE": "Reset Google Authenticator code",
         "EMAIL_LABEL": "Email",

@@ -113,7 +113,6 @@ describe("Password", function () {
                 expect($('#password')).toHaveProp('disabled', true);
                 expect($('#submit-password-button')).not.toBeVisible();
                 expect($('#reset-password-button')).not.toBeVisible();
-                expect($('#otp-section')).toBeVisible();
                 expect($('#otp')).toBeFocused();
 
                 done();

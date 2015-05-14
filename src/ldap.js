@@ -40,7 +40,6 @@ Ldap.prototype.authenticate = function (login, password) {
 
     client.bind(login + '@' + config['ldap']['domain'], password, function (err) {
         if (err) {
-console.error(err);
             defer.resolve(false);
             return;
         }

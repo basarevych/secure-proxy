@@ -9,6 +9,11 @@ function submitOtp() {
         return;
     }
 
+    $('#submit-otp-button')
+        .addClass('disabled')
+        .prop('disabled', true)
+        .html('<img src="/secure-proxy/static/auth/img/loader.gif">');
+
     $.ajax({
         url: '/secure-proxy/api/otp',
         method: 'GET',
@@ -19,6 +24,11 @@ function submitOtp() {
         success: function (data) {
             var messages = $('#otp-messages');
             messages.empty();
+
+            $('#submit-otp-button')
+                .removeClass('disabled')
+                .prop('disabled', false)
+                .text(gl.formatMessage('SUBMIT_LABEL'));
 
             if (data.success) {
                 $('#main-form').slideUp(function () { window.location.reload(); });
@@ -33,7 +43,15 @@ function submitOtp() {
                    .text(gl.formatMessage('INVALID_OTP'))
                    .appendTo(messages);
             }
-        }
+        },
+        error: function () {
+            $('#submit-otp-button')
+                .removeClass('disabled')
+                .prop('disabled', false)
+                .text(gl.formatMessage('SUBMIT_LABEL'));
+
+            alert(gl.formatMessage('INTERNAL_ERROR'));
+        },
     });
 }
 
@@ -80,6 +98,9 @@ function resetOtp() {
                         $('#modal-submit').removeClass('disabled').prop('disabled', false);
                     }
                 },
+                error: function () {
+                    alert(gl.formatMessage('INTERNAL_ERROR'));
+                },
             });
         });
 
@@ -118,6 +139,9 @@ function doResetOtp() {
                    .text(gl.formatMessage(expired ? 'PAGE_EXPIRED' : 'CODE_RESET_FAILURE'))
                    .appendTo(messages);
             }
-        }
+        },
+        error: function () {
+            alert(gl.formatMessage('INTERNAL_ERROR'));
+        },
     });
 }

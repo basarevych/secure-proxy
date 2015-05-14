@@ -3,7 +3,10 @@
 function submitPassword() {
     var gl = window['globalize'];
     var login = validateFormField($('#login')),
-        password = validateFormField($('#password'));
+        password = validateFormField($('#password')),
+        messages = $('#login-messages');
+
+    messages.empty();
 
     if (!login) {
         $('#login').focus();
@@ -15,6 +18,11 @@ function submitPassword() {
         return;
     }
 
+    $('#submit-password-button')
+        .addClass('disabled')
+        .prop('disabled', true)
+        .html('<img src="/secure-proxy/static/auth/img/loader.gif">');
+
     $.ajax({
         url: '/secure-proxy/api/auth',
         method: 'GET',
@@ -24,8 +32,10 @@ function submitPassword() {
             password: $('#password').val(),
         },
         success: function (data) {
-            var messages = $('#login-messages');
-            messages.empty();
+            $('#submit-password-button')
+                .removeClass('disabled')
+                .prop('disabled', false)
+                .text(gl.formatMessage('SUBMIT_LABEL'));
 
             if (data.success) {
                 if (data.next == 'done') {
@@ -66,7 +76,10 @@ function submitPassword() {
                             $('#reset-password-button').hide();
                             $('#otp').val('');
                             $('#otp-section').slideDown(function () { $('#otp').focus() });
-                        }
+                        },
+                        error: function () {
+                            alert(gl.formatMessage('INTERNAL_ERROR'));
+                        },
                     });
                 }
             } else {
@@ -75,7 +88,15 @@ function submitPassword() {
                    .text(gl.formatMessage('INVALID_LOGIN'))
                    .appendTo(messages);
             }
-        }
+        },
+        error: function () {
+            $('#submit-password-button')
+                .removeClass('disabled')
+                .prop('disabled', false)
+                .text(gl.formatMessage('SUBMIT_LABEL'));
+
+            alert(gl.formatMessage('INTERNAL_ERROR'));
+        },
     });
 }
 
@@ -122,6 +143,9 @@ function resetPassword() {
                            .appendTo(messages);
                         $('#modal-submit').removeClass('disabled').prop('disabled', false);
                     }
+                },
+                error: function () {
+                    alert(gl.formatMessage('INTERNAL_ERROR'));
                 },
             });
         });
@@ -182,6 +206,9 @@ function doResetPassword() {
                    .text(gl.formatMessage(expired ? 'PAGE_EXPIRED' : 'PASSWORD_RESET_FAILURE'))
                    .appendTo(messages);
             }
-        }
+        },
+        error: function () {
+            alert(gl.formatMessage('INTERNAL_ERROR'));
+        },
     });
 }
