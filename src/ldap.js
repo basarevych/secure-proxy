@@ -40,7 +40,11 @@ Ldap.prototype.authenticate = function (login, password) {
 
     client.bind(login + '@' + config['ldap']['domain'], password, function (err) {
         if (err) {
-            defer.resolve(false);
+            if (err.name == 'InvalidCredentialsError')
+                defer.resolve(false);
+            else
+                defer.reject(err);
+            client.unbind();
             return;
         }
 
