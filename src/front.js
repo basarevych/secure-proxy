@@ -75,6 +75,7 @@ Front.prototype.requestListener = function (protocol, req, res) {
         api = this.sl.get('api'),
         proxy = this.sl.get('proxy'),
         config = this.sl.get('config'),
+        logger = this.sl.get('logger'),
         cookies = this.parseCookies(req),
         query = url.parse(req.url, true),
         sid = query.query['sid'],
@@ -102,7 +103,7 @@ Front.prototype.requestListener = function (protocol, req, res) {
                 me.returnFile('auth/index.html', res);
             })
             .catch(function (err) {
-                console.error(err);
+                logger.error(err);
                 me.returnInternalError(res);
             });
 
@@ -161,7 +162,7 @@ Front.prototype.requestListener = function (protocol, req, res) {
             }
         })
         .catch(function (err) {
-            console.error(err);
+            logger.error(err);
         });
 };
 

@@ -40,6 +40,7 @@ var sl          = new ServiceLocator(),
     ldap        = new Ldap(sl),
     globalize   = new Globalize(sl),
     cons        = new Console(sl),
+    logger      = sl.get('logger'),
     config      = sl.get('config');
 
 switch (argv['_'][0]) {
@@ -49,7 +50,7 @@ switch (argv['_'][0]) {
             xfwd: true,
         });
         proxy.on('error', function (err, req, res) {
-            console.error(err);
+            logger.error(err);
             front.returnInternalError(res);
         });
         sl.set('proxy', proxy);
@@ -86,7 +87,7 @@ switch (argv['_'][0]) {
                         process.setuid(config['group']);
                     }
                 } catch (err) {
-                    console.error(err);
+                    logger.error(err);
                     process.exit(1);
                 }
             });

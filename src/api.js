@@ -18,6 +18,7 @@ Api.prototype.locale = function (protocol, sid, req, res) {
     var front = this.sl.get('front'),
         globalize = this.sl.get('globalize'),
         config = this.sl.get('config'),
+        logger = this.sl.get('logger'),
         query = url.parse(req.url, true),
         setLocale = query.query['set'],
         cookies = front.parseCookies(req),
@@ -45,7 +46,8 @@ Api.prototype.locale = function (protocol, sid, req, res) {
 
 Api.prototype.status = function (protocol, sid, req, res) {
     var db = this.sl.get('database'),
-        front = this.sl.get('front');
+        front = this.sl.get('front'),
+        logger = this.sl.get('logger');
 
     if (typeof sid == 'undefined')
         return front.returnBadRequest(res);
@@ -66,14 +68,15 @@ Api.prototype.status = function (protocol, sid, req, res) {
             res.end(JSON.stringify({ authenticated: false }));
         })
         .catch(function (err) {
-            console.error(err);
+            logger.error(err);
             front.returnInternalError(res);
         });
 };
 
 Api.prototype.logout = function (protocol, sid, req, res) {
     var db = this.sl.get('database'),
-        front = this.sl.get('front');
+        front = this.sl.get('front'),
+        logger = this.sl.get('logger');
 
     if (typeof sid == 'undefined')
         return front.returnBadRequest(res);
@@ -87,7 +90,7 @@ Api.prototype.logout = function (protocol, sid, req, res) {
                         res.end(JSON.stringify({ success: true }));
                     })
                     .catch(function (err) {
-                        console.error(err);
+                        logger.error(err);
                         front.returnInternalError(res);
                     });
                 return;
@@ -97,7 +100,7 @@ Api.prototype.logout = function (protocol, sid, req, res) {
             res.end(JSON.stringify({ success: false }));
         })
         .catch(function (err) {
-            console.error(err);
+            logger.error(err);
             front.returnInternalError(res);
         });
 };
@@ -107,6 +110,7 @@ Api.prototype.auth = function (protocol, sid, req, res) {
         ldap = this.sl.get('ldap'),
         front = this.sl.get('front'),
         config = this.sl.get('config'),
+        logger = this.sl.get('logger'),
         query = url.parse(req.url, true),
         action = query.query['action'],
         login = query.query['login'],
@@ -157,12 +161,12 @@ Api.prototype.auth = function (protocol, sid, req, res) {
                                     }));
                                 })
                                 .catch(function (err) {
-                                    console.error(err);
+                                    logger.error(err);
                                     front.returnInternalError(res);
                                 });
                         })
                         .catch(function (err) {
-                            console.error(err);
+                            logger.error(err);
                             front.returnInternalError(res);
                         });
                     return;
@@ -172,7 +176,7 @@ Api.prototype.auth = function (protocol, sid, req, res) {
                 res.end(JSON.stringify({ success: false }));
             })
             .catch(function (err) {
-                console.error(err);
+                logger.error(err);
                 front.returnInternalError(res);
             });
     } else if (action == 'set') {
@@ -191,7 +195,7 @@ Api.prototype.auth = function (protocol, sid, req, res) {
                                 res.end(JSON.stringify({ success: true }));
                             })
                             .catch(function (err) {
-                                console.error(err);
+                                logger.error(err);
                                 front.returnInternalError(res);
                             });
                     } else {
@@ -207,7 +211,7 @@ Api.prototype.auth = function (protocol, sid, req, res) {
                 }
             })
             .catch(function (err) {
-                console.error(err);
+                logger.error(err);
                 front.returnInternalError(res);
             });
     } else {
@@ -219,6 +223,7 @@ Api.prototype.otp = function (protocol, sid, req, res) {
     var db = this.sl.get('database'),
         front = this.sl.get('front'),
         config = this.sl.get('config'),
+        logger = this.sl.get('logger'),
         query = url.parse(req.url, true),
         action = query.query['action'],
         otp = query.query['otp'],
@@ -253,7 +258,7 @@ Api.prototype.otp = function (protocol, sid, req, res) {
                         res.end(JSON.stringify(result));
                     })
                     .catch(function (err) {
-                        console.error(err);
+                        logger.error(err);
                         front.returnInternalError(res);
                     });
             } else if (action == 'check') {
@@ -273,7 +278,7 @@ Api.prototype.otp = function (protocol, sid, req, res) {
                                     }));
                                 })
                                 .catch(function (err) {
-                                    console.error(err);
+                                    logger.error(err);
                                     front.returnInternalError(res);
                                 });
                             return;
@@ -283,7 +288,7 @@ Api.prototype.otp = function (protocol, sid, req, res) {
                         res.end(JSON.stringify({ success: false }));
                     })
                     .catch(function (err) {
-                        console.error(err);
+                        logger.error(err);
                         front.returnInternalError(res);
                     });
             } else if (action == 'reset') {
@@ -302,7 +307,7 @@ Api.prototype.otp = function (protocol, sid, req, res) {
                                     res.end(JSON.stringify({ success: true }));
                                 })
                                 .catch(function (err) {
-                                    console.error(err);
+                                    logger.error(err);
                                     front.returnInternalError(res);
                                 });
                             return;
@@ -315,7 +320,7 @@ Api.prototype.otp = function (protocol, sid, req, res) {
                         }));
                     })
                     .catch(function (err) {
-                        console.error(err);
+                        logger.error(err);
                         front.returnInternalError(res);
                     });
             } else {
@@ -323,7 +328,7 @@ Api.prototype.otp = function (protocol, sid, req, res) {
             }
         })
         .catch(function (err) {
-            console.error(err);
+            logger.error(err);
             front.returnInternalError(res);
         });
 };
@@ -334,6 +339,7 @@ Api.prototype.resetRequest = function (protocol, sid, req, res) {
         email = this.sl.get('email'),
         globalize = this.sl.get('globalize'),
         config = this.sl.get('config'),
+        logger = this.sl.get('logger'),
         query = url.parse(req.url, true),
         type = query.query['type'],
         userEmail = query.query['email'],
@@ -383,12 +389,12 @@ Api.prototype.resetRequest = function (protocol, sid, req, res) {
                         }
                     })
                     .catch(function (err) {
-                        console.error(err);
+                        logger.error(err);
                         front.returnInternalError(res);
                     });
             })
             .catch(function (err) {
-                console.error(err);
+                logger.error(err);
                 front.returnInternalError(res);
             });
     } else if (type == 'otp') {
@@ -412,12 +418,12 @@ Api.prototype.resetRequest = function (protocol, sid, req, res) {
                         res.end(JSON.stringify({ success: (promises.length > 0) }));
                     })
                     .catch(function (err) {
-                        console.error(err);
+                        logger.error(err);
                         front.returnInternalError(res);
                     });
             })
             .catch(function (err) {
-                console.error(err);
+                logger.error(err);
                 front.returnInternalError(res);
             });
     } else {

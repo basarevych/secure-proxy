@@ -1,9 +1,11 @@
 'use strict'
 
-var config = require('../config.js');
+var logger = require('tracer').console(),
+    config = require('../config.js');
 
 function ServiceLocator() {
     this.services = [];
+    this.services['logger'] = logger;
     this.services['config'] = config;
 
     this.allowOverride = false;
