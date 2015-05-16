@@ -30,6 +30,7 @@ Ldap.prototype.getClient = function () {
 Ldap.prototype.authenticate = function (login, password) {
     var config = this.sl.get('config'),
         db = this.sl.get('database'),
+        logger = this.sl.get('logger'),
         client = this.getClient(),
         defer = q.defer();
 
@@ -38,12 +39,19 @@ Ldap.prototype.authenticate = function (login, password) {
         return defer.promise;
     }
 
-    client.bind(login + '@' + config['ldap']['domain'], password, function (err) {
+    var fullLogin = login;
+    if (config['ldap']['domain'])
+        fullLogin += '@' + config['ldap']['domain'];
+
+    client.bind(fullLogin, password, function (err) {
         if (err) {
-            if (err.name == 'InvalidCredentialsError')
+            if (err.name == 'InvalidCredentialsError') {
+                logger.info('LDAP: Invalid credentials for ' + login);
                 defer.resolve(false);
-            else
+            } else {
+                logger.error('LDAP bind', err);
                 defer.reject(err);
+            }
             client.unbind();
             return;
         }
@@ -56,48 +64,55 @@ Ldap.prototype.authenticate = function (login, password) {
 
         client.search(config['ldap']['users_group'], opts, function (err, search) {
             if (err) {
-                client.unbind();
+                logger.error('LDAP search', err);
                 defer.reject(err);
+                client.unbind();
                 return;
             }
 
+            var email = null;
             search.on('searchEntry', function (entry) {
                 if (!entry.object) {
                     defer.resolve(false);
                     return;
                 }
 
-                var email = entry.object[config['ldap']['email_attr_name']];
-                if (email.indexOf('@') == -1) {
-                    defer.resolve(false);
-                    return;
-                }
+                email = entry.object[config['ldap']['email_attr_name']];
+                if (typeof email == 'undefined')
+                    email = null;
+            });
 
+            search.on('end', function (result) {
                 db.userExists(login)
                     .then(function (exists) {
                         if (exists) {
+                            db.setUserEmail(email);
                             defer.resolve(true);
+                            client.unbind();
                             return;
                         }
 
                         db.createUser(login, null, email)
                             .then(function () {
                                 defer.resolve(true);
+                                client.unbind();
                             })
                             .catch(function (err) {
                                 defer.reject(err);
+                                client.unbind();
                             });
                     })
                     .catch(function (err) {
                         defer.reject(err);
+                        client.unbind();
                     });
             });
 
             search.on('error', function (err) {
+                logger.error('LDAP search error event', err);
                 defer.reject(err);
+                client.unbind();
             });
-
-            client.unbind();
         });
     });
 

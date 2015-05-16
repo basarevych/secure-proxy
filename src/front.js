@@ -45,7 +45,8 @@ Front.prototype.returnBadRequest = function (res) {
 };
 
 Front.prototype.returnFile = function (filename, res) {
-    var me = this;
+    var me = this,
+        logger = this.sl.get('logger');
 
     var realPath = getRealPath(filename);
     if (realPath === false)
@@ -59,12 +60,13 @@ Front.prototype.returnFile = function (filename, res) {
         case '.gif':    type = 'image/gif'; break;
     }
 
-    res.writeHead(200, { 'Content-Type': type });
-
     fs.readFile(realPath, function (err, data) {
-        if (err)
-            return me.return500(res);
+        if (err) {
+            logger.error('fs readFile', err);
+            return me.returnInternalError(res);
+        }
 
+        res.writeHead(200, { 'Content-Type': type });
         res.end(data);
     });
 };
@@ -84,26 +86,57 @@ Front.prototype.requestListener = function (protocol, req, res) {
     if (typeof sid == 'undefined')
         sid = cookies[config['namespace'] + 'sid'];
 
-    if (typeof sid == 'undefined') {
+    if (urlParts.length >= 2 && urlParts[0] == '' && urlParts[1] == 'secure-proxy') {
+        if (urlParts.length == 2 || urlParts[2] == '') {
+            return me.returnNotFound(res);
+        } else if (urlParts[2] == 'static') {
+            urlParts.shift();
+            urlParts.shift();
+            urlParts.shift();
+            return me.returnFile(urlParts.join('/'), res);
+        } else if (urlParts[2] == 'api') {
+            if (urlParts.length < 4)
+                return me.returnNotFound(res);
+            switch (urlParts[3]) {
+                case 'locale':
+                    return api.locale(protocol, sid, req, res);
+                case 'status':
+                    return api.status(protocol, sid, req, res);
+                case 'logout':
+                    return api.logout(protocol, sid, req, res);
+                case 'auth':
+                    return api.auth(protocol, sid, req, res);
+                case 'otp':
+                    return api.otp(protocol, sid, req, res);
+                case 'reset-request':
+                    return api.resetRequest(protocol, sid, req, res);
+                default:
+                    return me.returnNotFound(res);
+            }
+        }
+        return me.returnNotFound(res);
+    }
+
+    if (!sid) {
         var defer = q.defer();
 
         crypto.randomBytes(16, function (ex, buf) {
-            if (ex)
+            if (ex) {
+                logger('crypto randomBytes', ex);
                 defer.reject(ex);
-            else
-                defer.resolve(buf.toString('hex'));
+                return;
+            }
+
+            defer.resolve(buf.toString('hex'));
         });
 
         defer.promise
             .then(function (random) {
                 var header = config['namespace'] + 'sid=' + random + '; path=/';
                 res.setHeader('set-cookie', header);
-            })
-            .then(function () {
                 me.returnFile('auth/index.html', res);
             })
             .catch(function (err) {
-                logger.error(err);
                 me.returnInternalError(res);
             });
 
@@ -122,40 +155,13 @@ Front.prototype.requestListener = function (protocol, req, res) {
                     isAuthenticated = session.auth_password;
             }
 
-            if (urlParts.length >= 2 && urlParts[0] == '' && urlParts[1] == 'secure-proxy') {
-                if (urlParts.length == 2 || urlParts[2] == '') {
-                    return me.returnNotFound(res);
-                } else if (urlParts[2] == 'static') {
-                    urlParts.shift();
-                    urlParts.shift();
-                    urlParts.shift();
-                    return me.returnFile(urlParts.join('/'), res);
-                } else if (urlParts[2] == 'api') {
-                    if (urlParts.length < 4)
-                        return me.returnNotFound(res);
-                    switch (urlParts[3]) {
-                        case 'locale':
-                            return api.locale(protocol, sid, req, res);
-                        case 'status':
-                            return api.status(protocol, sid, req, res);
-                        case 'logout':
-                            return api.logout(protocol, sid, req, res);
-                        case 'auth':
-                            return api.auth(protocol, sid, req, res);
-                        case 'otp':
-                            return api.otp(protocol, sid, req, res);
-                        case 'reset-request':
-                            return api.resetRequest(protocol, sid, req, res);
-                        default:
-                            return me.returnNotFound(res);
-                    }
-                }
-            }
-
             if (isAuthenticated) {
                 db.refreshSession(sid)
                     .then(function () {
                         proxy.web(req, res);
+                    })
+                    .catch(function (err) {
+                        me.returnInternalError(res);
                     });
             } else {
                 me.returnFile('auth/index.html', res);

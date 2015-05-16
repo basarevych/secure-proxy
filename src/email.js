@@ -29,6 +29,7 @@ Email.prototype.getServer = function () {
 
 Email.prototype.send = function (params) {
     var config = this.sl.get('config'),
+        logger = this.sl.get('logger'),
         server = this.getServer(),
         defer = q.defer();
 
@@ -42,6 +43,7 @@ Email.prototype.send = function (params) {
 
     server.send(message, function (err, message) {
         if (err) {
+            logger.error('email send', err);
             defer.reject(err);
             return;
         }

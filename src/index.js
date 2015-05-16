@@ -15,7 +15,7 @@ var fs              = require('fs'),
     Globalize       = require('./globalize.js'),
     Console         = require('./console.js');
 
-if (argv['_'].length == 0) {
+function showUsage() {
     console.log("Usage: node src/index.js <command> [options]");
     console.log("\nCommands:");
     console.log("\tstart\t\t\tStarts the daemon");
@@ -29,6 +29,10 @@ if (argv['_'].length == 0) {
     console.log("\n'list-sessions' options:");
     console.log("\t-l, --login=name\tOptional. Limit query to this login");
     console.log("");
+}
+
+if (argv['_'].length == 0) {
+    showUsage();
     return;
 }
 
@@ -50,7 +54,7 @@ switch (argv['_'][0]) {
             xfwd: true,
         });
         proxy.on('error', function (err, req, res) {
-            logger.error(err);
+            logger.error('proxy', err);
             front.returnInternalError(res);
         });
         sl.set('proxy', proxy);
@@ -87,7 +91,7 @@ switch (argv['_'][0]) {
                         process.setuid(config['group']);
                     }
                 } catch (err) {
-                    logger.error(err);
+                    logger.error('dropping privileges', err);
                     process.exit(1);
                 }
             });
@@ -114,4 +118,7 @@ switch (argv['_'][0]) {
     case 'delete-session':
         cons.deleteSession();
         break;
+
+    default:
+        showUsage();
 }

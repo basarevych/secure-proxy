@@ -18,7 +18,6 @@ Api.prototype.locale = function (protocol, sid, req, res) {
     var front = this.sl.get('front'),
         globalize = this.sl.get('globalize'),
         config = this.sl.get('config'),
-        logger = this.sl.get('logger'),
         query = url.parse(req.url, true),
         setLocale = query.query['set'],
         cookies = front.parseCookies(req),
@@ -26,7 +25,7 @@ Api.prototype.locale = function (protocol, sid, req, res) {
         locales = new locale.Locales(req.headers["accept-language"])
 
     var result = null;
-    if (typeof setLocale != 'undefined' && globalize.supportedLocales.indexOf(setLocale) != -1) {
+    if (setLocale && globalize.supportedLocales.indexOf(setLocale) != -1) {
         result = setLocale;
 
         var header = config['namespace'] + 'locale=' + result + '; path=/';
@@ -34,7 +33,7 @@ Api.prototype.locale = function (protocol, sid, req, res) {
     }
 
     if (!result) {
-        if (typeof localeCookie != 'undefined' && globalize.supportedLocales.indexOf(localeCookie) != -1)
+        if (localeCookie && globalize.supportedLocales.indexOf(localeCookie) != -1)
             result = localeCookie;
         else
             result = locales.best(new locale.Locales(globalize.supportedLocales));
@@ -46,61 +45,56 @@ Api.prototype.locale = function (protocol, sid, req, res) {
 
 Api.prototype.status = function (protocol, sid, req, res) {
     var db = this.sl.get('database'),
-        front = this.sl.get('front'),
-        logger = this.sl.get('logger');
+        front = this.sl.get('front');
 
-    if (typeof sid == 'undefined')
+    if (!sid)
         return front.returnBadRequest(res);
 
     db.selectSessions({ sid: sid })
         .then(function (sessions) {
             var session = sessions.length && sessions[0];
-            if (session) {
+            if (!session) {
                 res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({
-                    authenticated: true,
-                    login: session['login'],
-                }));
+                res.end(JSON.stringify({ authenticated: false }));
                 return;
             }
 
             res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ authenticated: false }));
+            res.end(JSON.stringify({
+                authenticated: true,
+                login: session['login'],
+            }));
         })
         .catch(function (err) {
-            logger.error(err);
             front.returnInternalError(res);
         });
 };
 
 Api.prototype.logout = function (protocol, sid, req, res) {
     var db = this.sl.get('database'),
-        front = this.sl.get('front'),
-        logger = this.sl.get('logger');
+        front = this.sl.get('front');
 
-    if (typeof sid == 'undefined')
+    if (!sid)
         return front.returnBadRequest(res);
 
     db.sessionExists(sid)
         .then(function (exists) {
-            if (exists) {
-                db.deleteSession(sid)
-                    .then(function () {
-                        res.writeHead(200, { 'Content-Type': 'application/json' });
-                        res.end(JSON.stringify({ success: true }));
-                    })
-                    .catch(function (err) {
-                        logger.error(err);
-                        front.returnInternalError(res);
-                    });
+            if (!exists) {
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false }));
                 return;
             }
 
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ success: false }));
+            db.deleteSession(sid)
+                .then(function () {
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: true }));
+                })
+                .catch(function (err) {
+                    front.returnInternalError(res);
+                });
         })
         .catch(function (err) {
-            logger.error(err);
             front.returnInternalError(res);
         });
 };
@@ -110,18 +104,16 @@ Api.prototype.auth = function (protocol, sid, req, res) {
         ldap = this.sl.get('ldap'),
         front = this.sl.get('front'),
         config = this.sl.get('config'),
-        logger = this.sl.get('logger'),
         query = url.parse(req.url, true),
         action = query.query['action'],
-        login = query.query['login'],
-        password = query.query['password'],
-        secret = query.query['secret'];
+        password = query.query['password'];
 
-    if (typeof sid == 'undefined' || typeof action == 'undefined' || typeof password == 'undefined')
+    if (!sid || !action || !password)
         return front.returnBadRequest(res);
 
     if (action == 'check') {
-        if (typeof login == 'undefined')
+        var login = query.query['login'];
+        if (!login)
             return front.returnBadRequest(res);
 
         db.checkUserPassword(login, password)
@@ -132,86 +124,84 @@ Api.prototype.auth = function (protocol, sid, req, res) {
                 return ldap.authenticate(login, password);
             })
             .then(function (match) {
-                if (match) {
-                    db.selectSessions({ sid: sid })
-                        .then(function (sessions) {
-                            var session = sessions.length && sessions[0];
-                            var defer = q.defer();
-
-                            if (session) {
-                                db.deleteSession(sid)
-                                    .then(function () {
-                                        defer.resolve();
-                                    })
-                                    .catch(function (err) {
-                                        defer.reject(err);
-                                    });
-                            } else {
-                                defer.resolve();
-                            }
-
-                            defer.promise
-                                .then(function () { return db.createSession(login, sid) })
-                                .then(function () { return db.setSessionPassword(sid, true) })
-                                .then(function () {
-                                    res.writeHead(200, { 'Content-Type': 'application/json' });
-                                    res.end(JSON.stringify({
-                                        success: true,
-                                        next: config['otp']['enable'] ? 'otp' : 'done',
-                                    }));
-                                })
-                                .catch(function (err) {
-                                    logger.error(err);
-                                    front.returnInternalError(res);
-                                });
-                        })
-                        .catch(function (err) {
-                            logger.error(err);
-                            front.returnInternalError(res);
-                        });
+                if (!match) {
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false }));
                     return;
                 }
 
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: false }));
+                db.selectSessions({ sid: sid })
+                    .then(function (sessions) {
+                        var session = sessions.length && sessions[0];
+                        var prepareDefer = q.defer();
+
+                        if (session) {
+                            db.deleteSession(sid)
+                                .then(function () {
+                                    prepareDefer.resolve();
+                                })
+                                .catch(function (err) {
+                                    prepareDefer.reject(err);
+                                });
+                        } else {
+                            prepareDefer.resolve();
+                        }
+
+                        prepareDefer.promise
+                            .then(function () { return db.createSession(login, sid) })
+                            .then(function () { return db.setSessionPassword(sid, true) })
+                            .then(function () {
+                                res.writeHead(200, { 'Content-Type': 'application/json' });
+                                res.end(JSON.stringify({
+                                    success: true,
+                                    next: config['otp']['enable'] ? 'otp' : 'done',
+                                }));
+                            })
+                            .catch(function (err) {
+                                front.returnInternalError(res);
+                            });
+                    })
+                    .catch(function (err) {
+                        front.returnInternalError(res);
+                    });
             })
             .catch(function (err) {
-                logger.error(err);
                 front.returnInternalError(res);
             });
     } else if (action == 'set') {
-        if (typeof secret == 'undefined')
+        var secret = query.query['secret'];
+        if (!secret)
             return front.returnBadRequest(res);
 
         db.selectUsers({ secret: secret })
             .then(function (users) {
                 var user = users.length && users[0];
-                if (user) {
-                    if (user['password'] != '* NOT SET *' && user['secret'] == secret) {
-                        db.setUserPassword(user['login'], password)
-                            .then(function () { return db.generateUserSecret(user['login']); })
-                            .then(function () {
-                                res.writeHead(200, { 'Content-Type': 'application/json' });
-                                res.end(JSON.stringify({ success: true }));
-                            })
-                            .catch(function (err) {
-                                logger.error(err);
-                                front.returnInternalError(res);
-                            });
-                    } else {
-                        res.writeHead(200, { 'Content-Type': 'application/json' });
-                        res.end(JSON.stringify({ success: false }));
-                    }
-                } else {
+                if (!user) {
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({
                         success: false,
                         reason: 'expired',
                     }));
+                    return;
                 }
+
+                if (!user['password'] || user['secret'] != secret) {
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false }));
+                    return;
+                }
+
+                db.setUserPassword(user['login'], password)
+                    .then(function () { return db.generateUserSecret(user['login']); })
+                    .then(function () {
+                        res.writeHead(200, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ success: true }));
+                    })
+                    .catch(function (err) {
+                        front.returnInternalError(res);
+                    });
             })
             .catch(function (err) {
-                logger.error(err);
                 front.returnInternalError(res);
             });
     } else {
@@ -223,13 +213,10 @@ Api.prototype.otp = function (protocol, sid, req, res) {
     var db = this.sl.get('database'),
         front = this.sl.get('front'),
         config = this.sl.get('config'),
-        logger = this.sl.get('logger'),
         query = url.parse(req.url, true),
-        action = query.query['action'],
-        otp = query.query['otp'],
-        secret = query.query['secret'];
+        action = query.query['action'];
 
-    if (typeof sid == 'undefined' || typeof action == 'undefined')
+    if (!sid || !action)
         return front.returnBadRequest(res);
 
     db.selectSessions({ sid: sid })
@@ -258,69 +245,66 @@ Api.prototype.otp = function (protocol, sid, req, res) {
                         res.end(JSON.stringify(result));
                     })
                     .catch(function (err) {
-                        logger.error(err);
                         front.returnInternalError(res);
                     });
             } else if (action == 'check') {
-                if (typeof otp == 'undefined')
+                var otp = query.query['otp'];
+                if (!otp)
                     return front.returnBadRequest(res);
 
                 db.checkUserOtpKey(session['login'], otp)
                     .then(function (correct) {
-                        if (correct) {
-                            db.setUserOtpConfirmed(session['login'], true)
-                                .then(function () { return db.setSessionOtp(sid, true); })
-                                .then(function () {
-                                    res.writeHead(200, { 'Content-Type': 'application/json' });
-                                    res.end(JSON.stringify({
-                                        success: true,
-                                        next: 'done',
-                                    }));
-                                })
-                                .catch(function (err) {
-                                    logger.error(err);
-                                    front.returnInternalError(res);
-                                });
+                        if (!correct) {
+                            res.writeHead(200, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({ success: false }));
                             return;
                         }
 
-                        res.writeHead(200, { 'Content-Type': 'application/json' });
-                        res.end(JSON.stringify({ success: false }));
+                        db.setUserOtpConfirmed(session['login'], true)
+                            .then(function () { return db.setSessionOtp(sid, true); })
+                            .then(function () {
+                                res.writeHead(200, { 'Content-Type': 'application/json' });
+                                res.end(JSON.stringify({
+                                    success: true,
+                                    next: 'done',
+                                }));
+                            })
+                            .catch(function (err) {
+                                front.returnInternalError(res);
+                            });
                     })
                     .catch(function (err) {
-                        logger.error(err);
                         front.returnInternalError(res);
                     });
             } else if (action == 'reset') {
-                if (typeof secret == 'undefined')
+                var secret = query.query['secret'];
+                if (!secret)
                     return front.returnBadRequest(res);
 
                 db.selectUsers({ login: session['login'] })
                     .then(function (users) {
                         var user = users.length && users[0];
-                        if (secret == user['secret']) {
-                            db.setUserOtpConfirmed(session['login'], false)
-                                .then(function () { return db.generateUserOtpKey(session['login']); })
-                                .then(function () { return db.generateUserSecret(session['login']); })
-                                .then(function () {
-                                    res.writeHead(200, { 'Content-Type': 'application/json' });
-                                    res.end(JSON.stringify({ success: true }));
-                                })
-                                .catch(function (err) {
-                                    logger.error(err);
-                                    front.returnInternalError(res);
-                                });
+                        if (secret != user['secret']) {
+                            res.writeHead(200, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({
+                                success: false,
+                                reason: 'expired',
+                            }));
                             return;
                         }
 
-                        res.writeHead(200, { 'Content-Type': 'application/json' });
-                        res.end(JSON.stringify({
-                            success: false,
-                            reason: 'expired',
-                        }));
+                        db.setUserOtpConfirmed(session['login'], false)
+                            .then(function () { return db.generateUserOtpKey(session['login']); })
+                            .then(function () { return db.generateUserSecret(session['login']); })
+                            .then(function () {
+                                res.writeHead(200, { 'Content-Type': 'application/json' });
+                                res.end(JSON.stringify({ success: true }));
+                            })
+                            .catch(function (err) {
+                                front.returnInternalError(res);
+                            });
                     })
                     .catch(function (err) {
-                        logger.error(err);
                         front.returnInternalError(res);
                     });
             } else {
@@ -328,7 +312,6 @@ Api.prototype.otp = function (protocol, sid, req, res) {
             }
         })
         .catch(function (err) {
-            logger.error(err);
             front.returnInternalError(res);
         });
 };
@@ -339,20 +322,18 @@ Api.prototype.resetRequest = function (protocol, sid, req, res) {
         email = this.sl.get('email'),
         globalize = this.sl.get('globalize'),
         config = this.sl.get('config'),
-        logger = this.sl.get('logger'),
         query = url.parse(req.url, true),
         type = query.query['type'],
         userEmail = query.query['email'],
         lang = query.query['lang'];
 
-    if (typeof type == 'undefined' || typeof userEmail == 'undefined' || typeof lang == 'undefined')
+    if (!type || !userEmail || !lang)
         return front.returnBadRequest(res);
 
     if (globalize.supportedLocales.indexOf(lang) == -1)
         return front.returnBadRequest(res);
 
     var gl = globalize.getLocale(lang);
-
     var baseUrlQuery = url.parse(config[protocol]['base_url']);
 
     if (type == 'password') {
@@ -360,7 +341,7 @@ Api.prototype.resetRequest = function (protocol, sid, req, res) {
             .then(function (users) {
                 var externPassword = false, promises = [];
                 users.forEach(function (user) {
-                    if (user['password'] == '* NOT SET *') {
+                    if (!user['password']) {
                         externPassword = true;
                         return;
                     }
@@ -389,12 +370,10 @@ Api.prototype.resetRequest = function (protocol, sid, req, res) {
                         }
                     })
                     .catch(function (err) {
-                        logger.error(err);
                         front.returnInternalError(res);
                     });
             })
             .catch(function (err) {
-                logger.error(err);
                 front.returnInternalError(res);
             });
     } else if (type == 'otp') {
@@ -418,12 +397,10 @@ Api.prototype.resetRequest = function (protocol, sid, req, res) {
                         res.end(JSON.stringify({ success: (promises.length > 0) }));
                     })
                     .catch(function (err) {
-                        logger.error(err);
                         front.returnInternalError(res);
                     });
             })
             .catch(function (err) {
-                logger.error(err);
                 front.returnInternalError(res);
             });
     } else {

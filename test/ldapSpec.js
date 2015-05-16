@@ -54,10 +54,10 @@ describe("Ldap", function () {
 
             var search = {
                 on: function (event, cb) {
-                    if (event != 'searchEntry')
-                        return;
-
-                    cb({ object: { mail: 'foo@bar' }});
+                    if (event == 'searchEntry')
+                        cb({ object: { mail: 'foo@bar' }});
+                    else if (event == 'end')
+                        cb();
                 },
             };
 

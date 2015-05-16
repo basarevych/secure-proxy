@@ -31,10 +31,10 @@ Database.prototype.getEngine = function () {
             "CREATE TABLE IF NOT EXISTS users ("
           + "  id INTEGER PRIMARY KEY ASC NOT NULL,"
           + "  login VARCHAR(255) NOT NULL,"
-          + "  password VARCHAR(255) NOT NULL,"
-          + "  email VARCHAR(255) NOT NULL,"
-          + "  secret TEXT NOT NULL,"
-          + "  otp_key TEXT NOT NULL,"
+          + "  password VARCHAR(255) NULL,"
+          + "  email VARCHAR(255) NULL,"
+          + "  secret TEXT NULL,"
+          + "  otp_key TEXT NULL,"
           + "  otp_confirmed BOOLEAN NOT NULL,"
           + "  CONSTRAINT user_login_unique UNIQUE (login)"
           + ")"
@@ -60,7 +60,8 @@ Database.prototype.getEngine = function () {
 };
 
 Database.prototype.userExists = function (login) {
-    var engine = this.getEngine(),
+    var logger = this.sl.get('logger'),
+        engine = this.getEngine(),
         defer = q.defer();
 
     var check = engine.prepare(
@@ -74,9 +75,11 @@ Database.prototype.userExists = function (login) {
         },
         function (err, row) {
             if (err) {
+                logger.error('sqlite get', err);
                 defer.reject(err);
                 return;
             }
+
             defer.resolve(row["count"] != 0);
         }
     );
@@ -86,7 +89,8 @@ Database.prototype.userExists = function (login) {
 };
 
 Database.prototype.selectUsers = function (params) {
-    var engine = this.getEngine(),
+    var logger = this.sl.get('logger'),
+        engine = this.getEngine(),
         defer = q.defer();
 
     var bind = {}, where = [];
@@ -115,9 +119,11 @@ Database.prototype.selectUsers = function (params) {
         bind,
         function (err, rows) {
             if (err) {
+                logger.error('sqlite all', err);
                 defer.reject(err);
                 return;
             }
+
             defer.resolve(rows);
         }
     );
@@ -128,6 +134,7 @@ Database.prototype.selectUsers = function (params) {
 
 Database.prototype.createUser = function (login, password, email) {
     var me = this,
+        logger = this.sl.get('logger'),
         engine = this.getEngine(),
         defer = q.defer();
 
@@ -139,14 +146,15 @@ Database.prototype.createUser = function (login, password, email) {
     ins.run(
         {
             $login: login,
-            $password: "* NOT SET *",
+            $password: null,
             $email: email,
-            $secret: "* NOT SET *",
-            $otp_key: '',
+            $secret: null,
+            $otp_key: null,
             $otp_confirmed: false,
         },
         function (err) {
             if (err) {
+                logger.error('sqlite run', err);
                 defer.reject(err);
                 return;
             }
@@ -177,7 +185,8 @@ Database.prototype.createUser = function (login, password, email) {
 };
 
 Database.prototype.deleteUser = function (login) {
-    var engine = this.getEngine(),
+    var logger = this.sl.get('logger'),
+        engine = this.getEngine(),
         defer = q.defer();
 
     var del = engine.prepare(
@@ -189,10 +198,13 @@ Database.prototype.deleteUser = function (login) {
             $login: login
         },
         function (err) {
-            if (err)
+            if (err) {
+                logger.error('sqlite run', err);
                 defer.reject(err);
-            else
-                defer.resolve();
+                return;
+            }
+
+            defer.resolve();
         }
     );
     del.finalize();
@@ -201,17 +213,20 @@ Database.prototype.deleteUser = function (login) {
 };
 
 Database.prototype.setUserPassword = function (login, password) {
-    var engine = this.getEngine(),
+    var logger = this.sl.get('logger'),
+        engine = this.getEngine(),
         defer = q.defer();
 
     bcrypt.genSalt(10, function (err, salt) {
         if (err) {
+            logger.error('bcrypt genSalt', err);
             defer.reject(err);
             return;
         }
 
         bcrypt.hash(password, salt, function (err, hash) {
             if (err) {
+                logger.error('bcrypt hash', err);
                 defer.reject(err);
                 return;
             }
@@ -227,10 +242,13 @@ Database.prototype.setUserPassword = function (login, password) {
                     $login: login
                 },
                 function (err) {
-                    if (err)
+                    if (err) {
+                        logger.error('sqlite run', err);
                         defer.reject(err);
-                    else
-                        defer.resolve();
+                        return;
+                    }
+
+                    defer.resolve();
                 }
             );
             upd.finalize();
@@ -241,24 +259,21 @@ Database.prototype.setUserPassword = function (login, password) {
 };
 
 Database.prototype.checkUserPassword = function (login, password) {
-    var engine = this.getEngine(),
+    var logger = this.sl.get('logger'),
+        engine = this.getEngine(),
         defer = q.defer();
-
-    if (!login) {
-        defer.reject("Invalid login");
-        return defer.promise;
-    }
 
     this.selectUsers({ login: login })
         .then(function (users) {
             var user = users.length && users[0];
-            if (!user) {
+            if (!user || !user['password']) {
                 defer.resolve(false);
                 return;
             }
 
             bcrypt.compare(password, user['password'], function (err, match) {
                 if (err) {
+                    logger.error('bcrypt compare', err);
                     defer.reject(err);
                     return;
                 }
@@ -274,7 +289,8 @@ Database.prototype.checkUserPassword = function (login, password) {
 };
 
 Database.prototype.setUserEmail = function (login, email) {
-    var engine = this.getEngine(),
+    var logger = this.sl.get('logger'),
+        engine = this.getEngine(),
         defer = q.defer();
 
     var upd = engine.prepare(
@@ -288,10 +304,13 @@ Database.prototype.setUserEmail = function (login, email) {
             $login: login
         },
         function (err) {
-            if (err)
+            if (err) {
+                logger.error('sqlite run', err);
                 defer.reject(err);
-            else
-                defer.resolve();
+                return;
+            }
+
+            defer.resolve();
         }
     );
     upd.finalize();
@@ -301,11 +320,13 @@ Database.prototype.setUserEmail = function (login, email) {
 
 Database.prototype.generateUserSecret = function (login) {
     var me = this,
+        logger = this.sl.get('logger'),
         engine = this.getEngine(),
         defer = q.defer();
 
     crypto.randomBytes(16, function (ex, buf) {
         if (ex) {
+            logger.error('crypto randomBytes', ex);
             defer.reject(ex);
             return;
         }
@@ -323,6 +344,7 @@ Database.prototype.generateUserSecret = function (login) {
             },
             function (err) {
                 if (err) {
+                    logger.error('sqlite run', err);
                     defer.reject(err);
                     return;
                 }
@@ -338,6 +360,7 @@ Database.prototype.generateUserSecret = function (login) {
 
 Database.prototype.generateUserOtpKey = function (login) {
     var me = this,
+        logger = this.sl.get('logger'),
         engine = this.getEngine(),
         defer = q.defer(),
         config = this.sl.get('config');
@@ -359,6 +382,7 @@ Database.prototype.generateUserOtpKey = function (login) {
         },
         function (err) {
             if (err) {
+                logger.error('sqlite run', err);
                 defer.reject(err);
                 return;
             }
@@ -374,11 +398,6 @@ Database.prototype.generateUserOtpKey = function (login) {
 Database.prototype.checkUserOtpKey = function (login, otp) {
     var engine = this.getEngine(),
         defer = q.defer();
-
-    if (!login) {
-        defer.reject("Invalid login");
-        return defer.promise;
-    }
 
     this.selectUsers({ login: login })
         .then(function (users) {
@@ -399,7 +418,8 @@ Database.prototype.checkUserOtpKey = function (login, otp) {
 };
 
 Database.prototype.setUserOtpConfirmed = function (login, confirmed) {
-    var engine = this.getEngine(),
+    var logger = this.sl.get('logger'),
+        engine = this.getEngine(),
         defer = q.defer();
 
     var upd = engine.prepare(
@@ -413,10 +433,13 @@ Database.prototype.setUserOtpConfirmed = function (login, confirmed) {
             $login: login
         },
         function (err) {
-            if (err)
+            if (err) {
+                logger.error('sqlite run', err);
                 defer.reject(err);
-            else
-                defer.resolve();
+                return;
+            }
+
+            defer.resolve();
         }
     );
     upd.finalize();
@@ -425,7 +448,8 @@ Database.prototype.setUserOtpConfirmed = function (login, confirmed) {
 };
 
 Database.prototype.sessionExists = function (sid) {
-    var engine = this.getEngine(),
+    var logger = this.sl.get('logger'),
+        engine = this.getEngine(),
         defer = q.defer();
 
     var check = engine.prepare(
@@ -439,9 +463,11 @@ Database.prototype.sessionExists = function (sid) {
         },
         function (err, row) {
             if (err) {
+                logger.error('sqlite get', err);
                 defer.reject(err);
                 return;
             }
+
             defer.resolve(row["count"] != 0);
         }
     );
@@ -451,7 +477,8 @@ Database.prototype.sessionExists = function (sid) {
 };
 
 Database.prototype.selectSessions = function (params) {
-    var engine = this.getEngine(),
+    var logger = this.sl.get('logger'),
+        engine = this.getEngine(),
         defer = q.defer();
 
     var bind = {}, where = [];
@@ -475,9 +502,11 @@ Database.prototype.selectSessions = function (params) {
         bind,
         function (err, rows) {
             if (err) {
+                logger.error('sqlite all', err);
                 defer.reject(err);
                 return;
             }
+
             defer.resolve(rows);
         }
     );
@@ -487,14 +516,10 @@ Database.prototype.selectSessions = function (params) {
 };
 
 Database.prototype.createSession = function (login, sid) {
-    var engine = this.getEngine(),
+    var logger = this.sl.get('logger'),
+        engine = this.getEngine(),
         defer = q.defer(),
         now = new Date().getTime();
-
-    if (!login) {
-        defer.reject("Invalid login");
-        return defer.promise;
-    }
 
     this.selectUsers({ login: login })
         .then(function (users) {
@@ -519,6 +544,7 @@ Database.prototype.createSession = function (login, sid) {
                 },
                 function (err) {
                     if (err) {
+                        logger.error('sqlite run', err);
                         defer.reject(err);
                         return;
                     }
@@ -536,7 +562,8 @@ Database.prototype.createSession = function (login, sid) {
 };
 
 Database.prototype.deleteSession = function (sid) {
-    var engine = this.getEngine(),
+    var logger = this.sl.get('logger'),
+        engine = this.getEngine(),
         defer = q.defer();
 
     var del = engine.prepare(
@@ -548,10 +575,13 @@ Database.prototype.deleteSession = function (sid) {
             $sid: sid
         },
         function (err) {
-            if (err)
+            if (err) {
+                logger.error('sqlite run', err);
                 defer.reject(err);
-            else
-                defer.resolve();
+                return;
+            }
+
+            defer.resolve();
         }
     );
     del.finalize();
@@ -560,7 +590,8 @@ Database.prototype.deleteSession = function (sid) {
 };
 
 Database.prototype.refreshSession = function (sid) {
-    var engine = this.getEngine(),
+    var logger = this.sl.get('logger'),
+        engine = this.getEngine(),
         defer = q.defer(),
         now = new Date().getTime();
 
@@ -575,10 +606,13 @@ Database.prototype.refreshSession = function (sid) {
             $sid: sid
         },
         function (err) {
-            if (err)
+            if (err) {
+                logger.error('sqlite run', err);
                 defer.reject(err);
-            else
-                defer.resolve();
+                return;
+            }
+
+            defer.resolve();
         }
     );
     upd.finalize();
@@ -587,7 +621,8 @@ Database.prototype.refreshSession = function (sid) {
 };
 
 Database.prototype.setSessionPassword = function (sid, password) {
-    var engine = this.getEngine(),
+    var logger = this.sl.get('logger'),
+        engine = this.getEngine(),
         defer = q.defer();
 
     var upd = engine.prepare(
@@ -601,10 +636,13 @@ Database.prototype.setSessionPassword = function (sid, password) {
             $sid: sid
         },
         function (err) {
-            if (err)
+            if (err) {
+                logger.error('sqlite run', err);
                 defer.reject(err);
-            else
-                defer.resolve();
+                return;
+            }
+    
+            defer.resolve();
         }
     );
     upd.finalize();
@@ -613,7 +651,8 @@ Database.prototype.setSessionPassword = function (sid, password) {
 };
 
 Database.prototype.setSessionOtp = function (sid, otp) {
-    var engine = this.getEngine(),
+    var logger = this.sl.get('logger'),
+        engine = this.getEngine(),
         defer = q.defer();
 
     var upd = engine.prepare(
@@ -627,10 +666,13 @@ Database.prototype.setSessionOtp = function (sid, otp) {
             $sid: sid
         },
         function (err) {
-            if (err)
+            if (err) {
+                logger.error('sqlite run', err);
                 defer.reject(err);
-            else
-                defer.resolve();
+                return;
+            }
+
+            defer.resolve();
         }
     );
     upd.finalize();

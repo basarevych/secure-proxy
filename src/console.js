@@ -37,7 +37,7 @@ Console.prototype.listUsers = function (email) {
     var db = this.getDatabase(),
         rl = this.getReadline();
 
-    rl.write(email ? "==> User list (" + email + ")\n" : "==> User list\n");
+    rl.write("==> User list" + (email ? " (" + email + ")\n" : "\n"));
 
     var params = {};
     if (email)
@@ -67,10 +67,21 @@ Console.prototype.updateUser = function () {
 
     rl.write("==> Update user\n");
     rl.question('-> Username? ', function (username) {
+        if (!username) {
+            rl.write("*  Need username\n");
+            rl.close();
+            return;
+        }
+
         rl.question('-> Password? ', function (password) {
             rl.question('-> Email? ', function (email) {
                 db.userExists(username)
                     .then(function (exists) {
+                        if (!password)
+                            password = null;
+                        if (!email)
+                            email = null;
+                            
                         if (exists) {
                             db.setUserPassword(username, password)
                                 .then(function () { return db.setUserEmail(username, email); })
@@ -97,6 +108,12 @@ Console.prototype.deleteUser = function () {
 
     rl.write("==> Delete user\n");
     rl.question('-> Username? ', function (username) {
+        if (!username) {
+            rl.write("*  Need username\n");
+            rl.close();
+            return;
+        }
+
         db.userExists(username)
             .then(function (exists) {
                 if (exists) {
@@ -117,7 +134,7 @@ Console.prototype.listSessions = function (login) {
     var db = this.getDatabase(),
         rl = this.getReadline();
 
-    rl.write(login ? "==> Session list (" + login + ")\n" : "==> Session list\n");
+    rl.write("==> Session list" + (login ? " (" + login + ")\n" : "\n"));
 
     var params = {};
     if (login)
@@ -147,6 +164,12 @@ Console.prototype.deleteSession = function () {
 
     rl.write("==> Delete session\n");
     rl.question('-> SID? ', function (sid) {
+        if (!sid) {
+            rl.write("*  Need SID\n");
+            rl.close();
+            return;
+        }
+
         db.sessionExists(sid)
             .then(function (exists) {
                 if (exists) {
