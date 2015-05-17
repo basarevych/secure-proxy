@@ -72,10 +72,8 @@ Ldap.prototype.authenticate = function (login, password) {
 
             var email = null;
             search.on('searchEntry', function (entry) {
-                if (!entry.object) {
-                    defer.resolve(false);
+                if (!entry.object)
                     return;
-                }
 
                 email = entry.object[config['ldap']['email_attr_name']];
                 if (typeof email == 'undefined')
@@ -86,7 +84,7 @@ Ldap.prototype.authenticate = function (login, password) {
                 db.userExists(login)
                     .then(function (exists) {
                         if (exists) {
-                            db.setUserEmail(email);
+                            db.setUserEmail(login, email);
                             defer.resolve(true);
                             client.unbind();
                             return;
