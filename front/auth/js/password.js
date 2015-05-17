@@ -124,6 +124,7 @@ function resetPassword() {
             }
 
             $('#modal-submit').addClass('disabled').prop('disabled', true);
+
             $.ajax({
                 url: '/secure-proxy/api/reset-request',
                 method: 'GET',
@@ -148,6 +149,8 @@ function resetPassword() {
                     }
                 },
                 error: function () {
+                    $('#modal-submit').removeClass('disabled').prop('disabled', false);
+
                     alert(gl.formatMessage('INTERNAL_ERROR'));
                 },
             });
