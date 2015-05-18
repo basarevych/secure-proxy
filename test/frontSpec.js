@@ -5,7 +5,7 @@ var ServiceLocator  = require('../src/service-locator.js'),
     Front           = require('../src/front.js');
 
 describe("Front", function () {
-    var sl, db, front, api, proxy;
+    var sl, db, front, config, api, proxy;
 
     beforeEach(function () {
         sl = new ServiceLocator();
@@ -16,8 +16,12 @@ describe("Front", function () {
 
         sl.setAllowOverride(true);
 
-        var config = {
+        config = {
             namespace: 'foobar',
+            session: {
+                lifetime: 100,
+                gc_probability: 0,
+            },
             otp: {
                 enable: true,
             },
@@ -114,6 +118,26 @@ describe("Front", function () {
         front.returnFile('auth/index.html', res);
     });
 
+    it("requestListener collects garbage", function (done) {
+        var req = {
+            headers: {},
+            url: '/some/path',
+        };
+
+        var res = createSpyObj('res', [ 'setHeader' ]);
+
+        config['session']['gc_probability'] = 100;
+        spyOn(db, 'deleteOldSessions');
+
+        spyOn(front, 'returnFile').andCallFake(function (name) {
+            expect(db.deleteOldSessions).toHaveBeenCalledWith(100);
+            expect(name).toBe('auth/index.html');
+            done();
+        });
+
+        front.requestListener('http', req, res);
+    });
+
     it("requestListener sets sid", function (done) {
         var req = {
             headers: {},
@@ -178,6 +202,7 @@ describe("Front", function () {
 
         spyOn(front, 'returnFile').andCallFake(function (name) {
             expect(name).toBe('auth/index.html');
+            expect(proxy.web).not.toHaveBeenCalled();
             done();
         });
 

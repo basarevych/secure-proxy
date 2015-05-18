@@ -56,7 +56,7 @@ describe("Database", function () {
         var data = {
             $user_id: params['$user_id'] || 1,
             $sid: params['$sid'] || 'sid',
-            $last: params['$last'] || new Date().getTime(),
+            $last: params['$last'] || Math.round((new Date().getTime()) / 1000),
             $auth_password: params['$auth_password'] || false,
             $auth_otp: params['$auth_otp'] || false,
         };
@@ -286,7 +286,7 @@ describe("Database", function () {
     });
 
     it("selects session", function (done) {
-        var time = new Date().getTime();
+        var time = Math.round((new Date().getTime()) / 1000);
 
         createUser()
             .then(function () { return createSession({ $last: time }); })
@@ -309,7 +309,7 @@ describe("Database", function () {
     });
 
     it("creates session", function (done) {
-        var time = new Date().getTime() - 1;
+        var time = Math.round((new Date().getTime()) / 1000) - 1;
 
         createUser()
             .then(function () { return db.createSession('login', 'sid'); })
@@ -337,7 +337,7 @@ describe("Database", function () {
     });
 
     it("deletes session", function (done) {
-        var time = new Date().getTime();
+        var time = Math.round((new Date().getTime()) / 1000);
 
         createUser()
             .then(function () { return createSession({ $last: time }); })
@@ -361,8 +361,35 @@ describe("Database", function () {
             });
     });
 
+    it("deletes old sessions", function (done) {
+        var time = Math.round((new Date().getTime()) / 1000);
+
+        createUser()
+            .then(function () { return createSession({ $sid: 'sid1', $last: time - 100 }); })
+            .then(function () { return createSession({ $sid: 'sid2', $last: time - 10 }); })
+            .then(function () {
+                db.deleteOldSessions(50)
+                    .then(function () {
+                        var sel = engine.prepare(
+                            "SELECT *"
+                          + "   FROM sessions"
+                        );
+                        sel.all(
+                            { },
+                            function (err, rows) {
+                                expect(err).toBeNull();
+                                expect(rows.length).toBe(1);
+                                expect(rows[0]['sid']).toBe('sid2');
+                                done();
+                            }
+                        );
+                        sel.finalize();
+                    });
+            });
+    });
+
     it("refreshes session", function (done) {
-        var time = new Date().getTime() - 1;
+        var time = Math.round((new Date().getTime()) / 1000) - 1;
 
         createUser()
             .then(function () { return createSession({ $last: 0 }); })

@@ -519,7 +519,7 @@ Database.prototype.createSession = function (login, sid) {
     var logger = this.sl.get('logger'),
         engine = this.getEngine(),
         defer = q.defer(),
-        now = new Date().getTime();
+        now = Math.round((new Date().getTime()) / 1000);
 
     this.selectUsers({ login: login })
         .then(function (users) {
@@ -589,11 +589,41 @@ Database.prototype.deleteSession = function (sid) {
     return defer.promise;
 };
 
+Database.prototype.deleteOldSessions = function (age) {
+    var logger = this.sl.get('logger'),
+        engine = this.getEngine(),
+        defer = q.defer();
+
+    var last = Math.round((new Date().getTime()) / 1000) - age;
+
+    var del = engine.prepare(
+        "DELETE FROM sessions"
+      + "   WHERE last < $last"
+    );
+    del.run(
+        {
+            $last: last
+        },
+        function (err) {
+            if (err) {
+                logger.error('sqlite run', err);
+                defer.reject(err);
+                return;
+            }
+
+            defer.resolve();
+        }
+    );
+    del.finalize();
+
+    return defer.promise;
+};
+
 Database.prototype.refreshSession = function (sid) {
     var logger = this.sl.get('logger'),
         engine = this.getEngine(),
         defer = q.defer(),
-        now = new Date().getTime();
+        now = Math.round((new Date().getTime()) / 1000);
 
     var upd = engine.prepare(
         "UPDATE sessions"

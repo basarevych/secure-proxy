@@ -83,6 +83,9 @@ Front.prototype.requestListener = function (protocol, req, res) {
         sid = query.query['sid'],
         urlParts = query.pathname.split('/');
 
+    if (randomValue(1, 100) <= config['session']['gc_probability'])
+        db.deleteOldSessions(config['session']['lifetime']);
+
     if (typeof sid == 'undefined')
         sid = cookies[config['namespace'] + 'sid'];
 
@@ -193,4 +196,8 @@ function getRealPath(filename) {
         return false;
 
     return path;
+}
+
+function randomValue(low, high) {
+    return Math.floor(Math.random() * (high - low + 1) + low);
 }
