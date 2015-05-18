@@ -222,9 +222,9 @@ describe("Front", function () {
         });
 
         db.createUser('login', 'password', 'foo@bar')
-            .then(function () { return db.createSession('login', 'sid') })
-            .then(function () { return db.setSessionPassword('sid', true) })
-            .then(function () { return db.setSessionOtp('sid', true) })
+            .then(function () { return db.createSession(1, 'sid') })
+            .then(function () { return db.setSessionPassword(1, true) })
+            .then(function () { return db.setSessionOtp(1, true) })
             .then(function () {
                 front.requestListener('http', req, {});
             });

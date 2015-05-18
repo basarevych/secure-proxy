@@ -105,7 +105,7 @@ describe("API", function () {
         });
 
         db.createUser('login', 'password', 'foo@bar')
-            .then(function () { return db.createSession('login', 'sid'); })
+            .then(function () { return db.createSession(1, 'sid'); })
             .then(function () {
                 api.status('http', 'sid', undefined, res);
             });
@@ -117,12 +117,12 @@ describe("API", function () {
         res.end.andCallFake(function (html) {
             var result = JSON.parse(html);
             expect(result['success']).toBeTruthy();
-            expect(db.deleteSession).toHaveBeenCalledWith('sid');
+            expect(db.deleteSession).toHaveBeenCalledWith(1);
             done();
         });
 
         db.createUser('login', 'password', 'foo@bar')
-            .then(function () { return db.createSession('login', 'sid'); })
+            .then(function () { return db.createSession(1, 'sid'); })
             .then(function () {
                 api.logout('http', 'sid', undefined, res);
             });
@@ -147,6 +147,7 @@ describe("API", function () {
         });
 
         db.createUser('login', 'password', 'foo@bar')
+            .then(function () { return db.createSession(1, 'sid'); })
             .then(function () {
                 api.auth('http', 'sid', req, res);
             });
@@ -178,6 +179,7 @@ describe("API", function () {
         });
 
         db.createUser('login', null, 'foo@bar')
+            .then(function () { return db.createSession(1, 'sid'); })
             .then(function () {
                 api.auth('http', 'sid', req, res);
             });
@@ -202,6 +204,7 @@ describe("API", function () {
         });
 
         db.createUser('login', 'other password', 'foo@bar')
+            .then(function () { return db.createSession(1, 'sid'); })
             .then(function () {
                 api.auth('http', 'sid', req, res);
             });
@@ -218,7 +221,7 @@ describe("API", function () {
             db.selectUsers({ login: 'login' })
                 .then(function (users) {
                     var user = users.length && users[0];
-                    db.checkUserPassword('login', 'password')
+                    db.checkUserPassword(1, 'password')
                         .then(function (match) {
                             var result = JSON.parse(html);
                             expect(result['success']).toBeTruthy();
@@ -230,7 +233,7 @@ describe("API", function () {
         });
 
         db.createUser('login', 'old password', 'foo@bar')
-            .then(function () { return db.createSession('login', 'sid'); })
+            .then(function () { return db.createSession(1, 'sid'); })
             .then(function () { return db.selectUsers({ login: 'login' }); })
             .then(function (users) {
                 var user = users.length && users[0];
@@ -254,7 +257,7 @@ describe("API", function () {
         });
 
         db.createUser('login', 'password', 'foo@bar')
-            .then(function () { return db.createSession('login', 'sid'); })
+            .then(function () { return db.createSession(1, 'sid'); })
             .then(function () {
                 api.otp('http', 'sid', req, res);
             });
@@ -277,8 +280,8 @@ describe("API", function () {
         });
 
         db.createUser('login', 'password', 'foo@bar')
-            .then(function () { return db.createSession('login', 'sid'); })
-            .then(function () { return db.setSessionPassword('sid', true); })
+            .then(function () { return db.createSession(1, 'sid'); })
+            .then(function () { return db.setSessionPassword(1, true); })
             .then(function () {
                 api.otp('http', 'sid', req, res);
             });
@@ -297,9 +300,9 @@ describe("API", function () {
         });
 
         db.createUser('login', 'password', 'foo@bar')
-            .then(function () { return db.setUserOtpConfirmed('login', true); })
-            .then(function () { return db.createSession('login', 'sid'); })
-            .then(function () { return db.setSessionPassword('sid', true); })
+            .then(function () { return db.setUserOtpConfirmed(1, true); })
+            .then(function () { return db.createSession(1, 'sid'); })
+            .then(function () { return db.setSessionPassword(1, true); })
             .then(function () {
                 api.otp('http', 'sid', req, res);
             });
@@ -319,8 +322,8 @@ describe("API", function () {
         });
 
         db.createUser('login', 'password', 'foo@bar')
-            .then(function () { return db.createSession('login', 'sid'); })
-            .then(function () { return db.setSessionPassword('sid', true); })
+            .then(function () { return db.createSession(1, 'sid'); })
+            .then(function () { return db.setSessionPassword(1, true); })
             .then(function () { return db.selectUsers({ login: 'login' }); })
             .then(function (users) {
                 var user = users.length && users[0];
@@ -343,8 +346,8 @@ describe("API", function () {
         });
 
         db.createUser('login', 'password', 'foo@bar')
-            .then(function () { return db.createSession('login', 'sid'); })
-            .then(function () { return db.setSessionPassword('sid', true); })
+            .then(function () { return db.createSession(1, 'sid'); })
+            .then(function () { return db.setSessionPassword(1, true); })
             .then(function () {
                 api.otp('http', 'sid', req, res);
             });
@@ -370,9 +373,9 @@ describe("API", function () {
         });
 
         db.createUser('login', 'password', 'foo@bar')
-            .then(function () { return db.setUserOtpConfirmed('login', true); })
-            .then(function () { return db.createSession('login', 'sid'); })
-            .then(function () { return db.setSessionPassword('sid', true); })
+            .then(function () { return db.setUserOtpConfirmed(1, true); })
+            .then(function () { return db.createSession(1, 'sid'); })
+            .then(function () { return db.setSessionPassword(1, true); })
             .then(function () { return db.selectUsers({ login: 'login' }); })
             .then(function (users) {
                 var user = users.length && users[0];
@@ -411,6 +414,7 @@ describe("API", function () {
         });
 
         db.createUser('login', 'password', 'foo@bar')
+            .then(function () { return db.createSession(1, 'sid'); })
             .then(function () {
                 api.resetRequest('http', 'sid', req, res);
             });
@@ -445,6 +449,7 @@ describe("API", function () {
         });
 
         db.createUser('login', 'password', 'foo@bar')
+            .then(function () { return db.createSession(1, 'sid'); })
             .then(function () {
                 api.resetRequest('http', 'sid', req, res);
             });

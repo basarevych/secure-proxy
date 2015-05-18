@@ -59,35 +59,6 @@ Database.prototype.getEngine = function () {
     return engine;
 };
 
-Database.prototype.userExists = function (login) {
-    var logger = this.sl.get('logger'),
-        engine = this.getEngine(),
-        defer = q.defer();
-
-    var check = engine.prepare(
-        "SELECT COUNT(*) AS count"
-      + "   FROM users"
-      + "   WHERE login = $login"
-    );
-    check.get(
-        {
-            $login: login
-        },
-        function (err, row) {
-            if (err) {
-                logger.error('sqlite get', err);
-                defer.reject(err);
-                return;
-            }
-
-            defer.resolve(row["count"] != 0);
-        }
-    );
-    check.finalize();
-
-    return defer.promise;
-};
-
 Database.prototype.selectUsers = function (params) {
     var logger = this.sl.get('logger'),
         engine = this.getEngine(),
@@ -95,6 +66,10 @@ Database.prototype.selectUsers = function (params) {
 
     var bind = {}, where = [];
     if (typeof params != 'undefined') {
+        if (typeof params['id'] != 'undefined') {
+            bind['$id'] = params['id'];
+            where.push(" id = $id");
+        }
         if (typeof params['login'] != 'undefined') {
             bind['$login'] = params['login'];
             where.push(" login = $login");
@@ -159,19 +134,20 @@ Database.prototype.createUser = function (login, password, email) {
                 return;
             }
 
-            me.generateUserSecret(login)
-                .then(function () { return me.generateUserOtpKey(login); })
+            var id = this.lastID;
+            me.generateUserSecret(id)
+                .then(function () { return me.generateUserOtpKey(id); })
                 .then(function () {
                     if (password) {
-                        me.setUserPassword(login, password)
+                        me.setUserPassword(id, password)
                             .then(function () {
-                                defer.resolve();
+                                defer.resolve(id);
                             })
                             .catch(function (err) {
                                 defer.reject(err);
                             });
                     } else {
-                        defer.resolve();
+                        defer.resolve(id);
                     }
                 })
                 .catch(function (err) {
@@ -184,18 +160,18 @@ Database.prototype.createUser = function (login, password, email) {
     return defer.promise;
 };
 
-Database.prototype.deleteUser = function (login) {
+Database.prototype.deleteUser = function (id) {
     var logger = this.sl.get('logger'),
         engine = this.getEngine(),
         defer = q.defer();
 
     var del = engine.prepare(
         "DELETE FROM users"
-      + "   WHERE login = $login"
+      + "   WHERE id = $id"
     );
     del.run(
         {
-            $login: login
+            $id: id
         },
         function (err) {
             if (err) {
@@ -212,7 +188,7 @@ Database.prototype.deleteUser = function (login) {
     return defer.promise;
 };
 
-Database.prototype.setUserPassword = function (login, password) {
+Database.prototype.setUserPassword = function (id, password) {
     var logger = this.sl.get('logger'),
         engine = this.getEngine(),
         defer = q.defer();
@@ -234,12 +210,12 @@ Database.prototype.setUserPassword = function (login, password) {
             var upd = engine.prepare(
                 "UPDATE users"
               + "   SET password = $password"
-              + "   WHERE login = $login"
+              + "   WHERE id = $id"
             );
             upd.run(
                 {
                     $password: hash,
-                    $login: login
+                    $id: id
                 },
                 function (err) {
                     if (err) {
@@ -258,12 +234,12 @@ Database.prototype.setUserPassword = function (login, password) {
     return defer.promise;
 };
 
-Database.prototype.checkUserPassword = function (login, password) {
+Database.prototype.checkUserPassword = function (id, password) {
     var logger = this.sl.get('logger'),
         engine = this.getEngine(),
         defer = q.defer();
 
-    this.selectUsers({ login: login })
+    this.selectUsers({ id: id })
         .then(function (users) {
             var user = users.length && users[0];
             if (!user || !user['password']) {
@@ -288,7 +264,7 @@ Database.prototype.checkUserPassword = function (login, password) {
     return defer.promise;
 };
 
-Database.prototype.setUserEmail = function (login, email) {
+Database.prototype.setUserEmail = function (id, email) {
     var logger = this.sl.get('logger'),
         engine = this.getEngine(),
         defer = q.defer();
@@ -296,12 +272,12 @@ Database.prototype.setUserEmail = function (login, email) {
     var upd = engine.prepare(
         "UPDATE users"
       + "   SET email = $email"
-      + "   WHERE login = $login"
+      + "   WHERE id = $id"
     );
     upd.run(
         {
             $email: email,
-            $login: login
+            $id: id
         },
         function (err) {
             if (err) {
@@ -318,7 +294,7 @@ Database.prototype.setUserEmail = function (login, email) {
     return defer.promise;
 };
 
-Database.prototype.generateUserSecret = function (login) {
+Database.prototype.generateUserSecret = function (id) {
     var me = this,
         logger = this.sl.get('logger'),
         engine = this.getEngine(),
@@ -335,12 +311,12 @@ Database.prototype.generateUserSecret = function (login) {
         var upd = engine.prepare(
             "UPDATE users"
           + "  SET secret = $secret"
-          + "  WHERE login = $login"
+          + "  WHERE id = $id"
         );
         upd.run(
             {
                 $secret: token,
-                $login: login,
+                $id: id,
             },
             function (err) {
                 if (err) {
@@ -358,7 +334,7 @@ Database.prototype.generateUserSecret = function (login) {
     return defer.promise;
 };
 
-Database.prototype.generateUserOtpKey = function (login) {
+Database.prototype.generateUserOtpKey = function (id) {
     var me = this,
         logger = this.sl.get('logger'),
         engine = this.getEngine(),
@@ -373,12 +349,12 @@ Database.prototype.generateUserOtpKey = function (login) {
     var upd = engine.prepare(
         "UPDATE users"
       + "  SET otp_key = $otp_key"
-      + "  WHERE login = $login"
+      + "  WHERE id = $id"
     );
     upd.run(
         {
             $otp_key: key.base32,
-            $login: login,
+            $id: id,
         },
         function (err) {
             if (err) {
@@ -395,11 +371,11 @@ Database.prototype.generateUserOtpKey = function (login) {
     return defer.promise;
 };
 
-Database.prototype.checkUserOtpKey = function (login, otp) {
+Database.prototype.checkUserOtpKey = function (id, otp) {
     var engine = this.getEngine(),
         defer = q.defer();
 
-    this.selectUsers({ login: login })
+    this.selectUsers({ id: id })
         .then(function (users) {
             var user = users.length && users[0];
             if (!user) {
@@ -417,7 +393,7 @@ Database.prototype.checkUserOtpKey = function (login, otp) {
     return defer.promise;
 };
 
-Database.prototype.setUserOtpConfirmed = function (login, confirmed) {
+Database.prototype.setUserOtpConfirmed = function (id, confirmed) {
     var logger = this.sl.get('logger'),
         engine = this.getEngine(),
         defer = q.defer();
@@ -425,12 +401,12 @@ Database.prototype.setUserOtpConfirmed = function (login, confirmed) {
     var upd = engine.prepare(
         "UPDATE users"
       + "   SET otp_confirmed = $otp_confirmed"
-      + "   WHERE login = $login"
+      + "   WHERE id = $id"
     );
     upd.run(
         {
             $otp_confirmed: confirmed,
-            $login: login
+            $id: id
         },
         function (err) {
             if (err) {
@@ -447,35 +423,6 @@ Database.prototype.setUserOtpConfirmed = function (login, confirmed) {
     return defer.promise;
 };
 
-Database.prototype.sessionExists = function (sid) {
-    var logger = this.sl.get('logger'),
-        engine = this.getEngine(),
-        defer = q.defer();
-
-    var check = engine.prepare(
-        "SELECT COUNT(*) AS count"
-      + "   FROM sessions"
-      + "   WHERE sid = $sid"
-    );
-    check.get(
-        {
-            $sid: sid
-        },
-        function (err, row) {
-            if (err) {
-                logger.error('sqlite get', err);
-                defer.reject(err);
-                return;
-            }
-
-            defer.resolve(row["count"] != 0);
-        }
-    );
-    check.finalize();
-
-    return defer.promise;
-};
-
 Database.prototype.selectSessions = function (params) {
     var logger = this.sl.get('logger'),
         engine = this.getEngine(),
@@ -483,9 +430,17 @@ Database.prototype.selectSessions = function (params) {
 
     var bind = {}, where = [];
     if (typeof params != 'undefined') {
+        if (typeof params['id'] != 'undefined') {
+            bind['$id'] = params['id'];
+            where.push(" s.id = $id");
+        }
         if (typeof params['sid'] != 'undefined') {
             bind['$sid'] = params['sid'];
             where.push(" s.sid = $sid");
+        }
+        if (typeof params['login'] != 'undefined') {
+            bind['$login'] = params['login'];
+            where.push(" u.login = $login");
         }
     }
 
@@ -515,17 +470,17 @@ Database.prototype.selectSessions = function (params) {
     return defer.promise;
 };
 
-Database.prototype.createSession = function (login, sid) {
+Database.prototype.createSession = function (userId, sid) {
     var logger = this.sl.get('logger'),
         engine = this.getEngine(),
         defer = q.defer(),
         now = Math.round((new Date().getTime()) / 1000);
 
-    this.selectUsers({ login: login })
+    this.selectUsers({ id: userId })
         .then(function (users) {
             var user = users.length && users[0];
             if (!user) {
-                defer.reject("No such user: " + login);
+                defer.reject("No such user: " + userId);
                 return;
             }
 
@@ -536,7 +491,7 @@ Database.prototype.createSession = function (login, sid) {
             );
             ins.run(
                 {
-                    $user_id: user['id'],
+                    $user_id: userId,
                     $sid: sid,
                     $last: now,
                     $auth_password: false,
@@ -549,7 +504,8 @@ Database.prototype.createSession = function (login, sid) {
                         return;
                     }
 
-                    defer.resolve();
+                    var id = this.lastID;
+                    defer.resolve(id);
                 }
             );
             ins.finalize();
@@ -561,18 +517,18 @@ Database.prototype.createSession = function (login, sid) {
     return defer.promise;
 };
 
-Database.prototype.deleteSession = function (sid) {
+Database.prototype.deleteSession = function (id) {
     var logger = this.sl.get('logger'),
         engine = this.getEngine(),
         defer = q.defer();
 
     var del = engine.prepare(
         "DELETE FROM sessions"
-      + "   WHERE sid = $sid"
+      + "   WHERE id = $id"
     );
     del.run(
         {
-            $sid: sid
+            $id: id
         },
         function (err) {
             if (err) {
@@ -619,7 +575,7 @@ Database.prototype.deleteOldSessions = function (age) {
     return defer.promise;
 };
 
-Database.prototype.refreshSession = function (sid) {
+Database.prototype.refreshSession = function (id) {
     var logger = this.sl.get('logger'),
         engine = this.getEngine(),
         defer = q.defer(),
@@ -628,12 +584,12 @@ Database.prototype.refreshSession = function (sid) {
     var upd = engine.prepare(
         "UPDATE sessions"
       + "   SET last = $last"
-      + "   WHERE sid = $sid"
+      + "   WHERE id = $id"
     );
     upd.run(
         {
             $last: now,
-            $sid: sid
+            $id: id
         },
         function (err) {
             if (err) {
@@ -650,7 +606,7 @@ Database.prototype.refreshSession = function (sid) {
     return defer.promise;
 };
 
-Database.prototype.setSessionPassword = function (sid, password) {
+Database.prototype.setSessionPassword = function (id, password) {
     var logger = this.sl.get('logger'),
         engine = this.getEngine(),
         defer = q.defer();
@@ -658,12 +614,12 @@ Database.prototype.setSessionPassword = function (sid, password) {
     var upd = engine.prepare(
         "UPDATE sessions"
       + "   SET auth_password = $auth_password"
-      + "   WHERE sid = $sid"
+      + "   WHERE id = $id"
     );
     upd.run(
         {
             $auth_password: password,
-            $sid: sid
+            $id: id
         },
         function (err) {
             if (err) {
@@ -680,7 +636,7 @@ Database.prototype.setSessionPassword = function (sid, password) {
     return defer.promise;
 };
 
-Database.prototype.setSessionOtp = function (sid, otp) {
+Database.prototype.setSessionOtp = function (id, otp) {
     var logger = this.sl.get('logger'),
         engine = this.getEngine(),
         defer = q.defer();
@@ -688,12 +644,12 @@ Database.prototype.setSessionOtp = function (sid, otp) {
     var upd = engine.prepare(
         "UPDATE sessions"
       + "   SET auth_otp = $auth_otp"
-      + "   WHERE sid = $sid"
+      + "   WHERE id = $id"
     );
     upd.run(
         {
             $auth_otp: otp,
-            $sid: sid
+            $id: id
         },
         function (err) {
             if (err) {

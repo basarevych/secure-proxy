@@ -78,7 +78,7 @@ describe("Console", function () {
             });
     });
 
-    it("update-user creates", function (done) {
+    it("creates user", function (done) {
         spyOn(db, 'createUser').andCallThrough();
 
         var question = 0;
@@ -95,25 +95,25 @@ describe("Console", function () {
             done();
         });
 
-        cons.updateUser();
+        cons.createUser();
     });
 
-    it("update-user modifies", function (done) {
+    it("updates user", function (done) {
         spyOn(db, 'setUserPassword').andCallThrough();
         spyOn(db, 'setUserEmail').andCallThrough();
 
         var question = 0;
         cons.rl.question.andCallFake(function(text, cb) {
             switch (++question) {
-                case 1: cb('login'); break;
+                case 1: cb(1); break;
                 case 2: cb('password'); break;
                 case 3: cb('foo@bar'); break;
             }
         });
 
         cons.rl.close.andCallFake(function () {
-            expect(db.setUserPassword).toHaveBeenCalledWith('login', 'password');
-            expect(db.setUserEmail).toHaveBeenCalledWith('login', 'foo@bar');
+            expect(db.setUserPassword).toHaveBeenCalledWith(1, 'password');
+            expect(db.setUserEmail).toHaveBeenCalledWith(1, 'foo@bar');
             done();
         });
 
@@ -127,11 +127,11 @@ describe("Console", function () {
         spyOn(db, 'deleteUser').andCallThrough();
 
         cons.rl.question.andCallFake(function(text, cb) {
-            cb('login');
+            cb(1);
         });
 
         cons.rl.close.andCallFake(function () {
-            expect(db.deleteUser).toHaveBeenCalledWith('login');
+            expect(db.deleteUser).toHaveBeenCalledWith(1);
             done();
         });
 
@@ -143,7 +143,7 @@ describe("Console", function () {
 
     it("lists sessions", function (done) {
         db.createUser('login', 'password', 'foo@bar')
-            .then(function () { return db.createSession('login', 'sid') })
+            .then(function () { return db.createSession(1, 'sid') })
             .then(function () { return db.selectSessions({ sid: 'sid' }) })
             .then(function (sessions) {
                 var session = sessions.length && sessions[0];
@@ -183,18 +183,18 @@ describe("Console", function () {
         spyOn(db, 'deleteSession').andCallThrough();
 
         cons.rl.question.andCallFake(function(text, cb) {
-            cb('sid');
+            cb(1);
         });
 
         cons.rl.close.andCallFake(function () {
-            expect(db.deleteSession).toHaveBeenCalledWith('sid');
+            expect(db.deleteSession).toHaveBeenCalledWith(1);
             done();
         });
 
         db.createUser('login', 'password', 'foo@bar')
-            .then(function () { return db.createSession('login', 'sid') })
+            .then(function () { return db.createSession(1, 'sid') })
             .then(function () {
-                cons.deleteSession('sid');
+                cons.deleteSession();
             });
     });
 });

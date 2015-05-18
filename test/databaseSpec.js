@@ -79,21 +79,6 @@ describe("Database", function () {
         return defer.promise;
     }
 
-    it("user exists", function (done) {
-        createUser()
-            .then(function () {
-                db.userExists('login')
-                    .then(function (exists) {
-                        expect(exists).toBeTruthy();
-                        db.userExists('non-existing')
-                            .then(function (exists) {
-                                expect(exists).toBeFalsy();
-                                done();
-                            });
-                    });
-            });
-    });
-
     it("selects users", function (done) {
         createUser()
             .then(function () {
@@ -130,7 +115,7 @@ describe("Database", function () {
                         expect(rows[0]['login']).toBe('login');
                         expect(rows[0]['email']).toBe('foo@bar');
 
-                        db.checkUserPassword('login', 'password')
+                        db.checkUserPassword(1, 'password')
                             .then(function (match) {
                                 expect(match).toBeTruthy();
                                 done();
@@ -144,7 +129,7 @@ describe("Database", function () {
     it("deletes user", function (done) {
         createUser()
             .then(function () {
-                db.deleteUser('login')
+                db.deleteUser(1)
                     .then(function () {
                         var sel = engine.prepare(
                             "SELECT *"
@@ -166,12 +151,12 @@ describe("Database", function () {
     it("sets and checks password", function (done) {
         createUser()
             .then(function () {
-                db.setUserPassword('login', 'passwd')
+                db.setUserPassword(1, 'passwd')
                     .then(function () {
-                        db.checkUserPassword('login', 'passwd')
+                        db.checkUserPassword(1, 'passwd')
                             .then(function (match) {
                                 expect(match).toBeTruthy();
-                                db.checkUserPassword('login', 'wrong password')
+                                db.checkUserPassword(1, 'wrong password')
                                     .then(function (match) {
                                         expect(match).toBeFalsy();
                                         done();
@@ -184,16 +169,16 @@ describe("Database", function () {
     it("sets user email", function (done) {
         createUser()
             .then(function () {
-                db.setUserEmail('login', 'new@email')
+                db.setUserEmail(1, 'new@email')
                     .then(function () {
                         var sel = engine.prepare(
                             "SELECT email"
                           + "   FROM users"
-                          + "   WHERE login = $login"
+                          + "   WHERE id = $id"
                         );
                         sel.get(
                             {
-                                $login: 'login',
+                                $id: 1,
                             },
                             function (err, row) {
                                 expect(err).toBeNull();
@@ -209,16 +194,16 @@ describe("Database", function () {
     it("generates user OTP key", function (done) {
         createUser({ $otp_key: 'DEADBEEF' })
             .then(function () {
-                db.generateUserOtpKey('login')
+                db.generateUserOtpKey(1)
                     .then(function () {
                         var sel = engine.prepare(
                             "SELECT otp_key"
                           + "   FROM users"
-                          + "   WHERE login = $login"
+                          + "   WHERE id = $id"
                         );
                         sel.get(
                             {
-                                $login: 'login',
+                                $id: 1,
                             },
                             function (err, row) {
                                 expect(err).toBeNull();
@@ -236,7 +221,7 @@ describe("Database", function () {
         createUser({ $otp_key: 'DEADBEEF' })
             .then(function () {
                 var correct = speakeasy.time({ key: 'DEADBEEF', encoding: 'base32' });
-                db.checkUserOtpKey('login', correct)
+                db.checkUserOtpKey(1, correct)
                     .then(function (match) {
                         expect(match).toBeTruthy();
                         done();
@@ -247,16 +232,16 @@ describe("Database", function () {
     it("sets user OTP confirmed", function (done) {
         createUser()
             .then(function () {
-                db.setUserOtpConfirmed('login', true)
+                db.setUserOtpConfirmed(1, true)
                     .then(function () {
                         var sel = engine.prepare(
                             "SELECT otp_confirmed"
                           + "   FROM users"
-                          + "   WHERE login = $login"
+                          + "   WHERE id = $id"
                         );
                         sel.get(
                             {
-                                $login: 'login',
+                                $id: 1,
                             },
                             function (err, row) {
                                 expect(err).toBeNull();
@@ -265,22 +250,6 @@ describe("Database", function () {
                             }
                         );
                         sel.finalize();
-                    });
-            });
-    });
-
-    it("session exists", function (done) {
-        createUser()
-            .then(function () { return createSession(); })
-            .then(function () {
-                db.sessionExists('sid')
-                    .then(function (exists) {
-                        expect(exists).toBeTruthy();
-                        db.sessionExists('non-existing')
-                            .then(function (exists) {
-                                expect(exists).toBeFalsy();
-                                done();
-                            });
                     });
             });
     });
@@ -312,7 +281,7 @@ describe("Database", function () {
         var time = Math.round((new Date().getTime()) / 1000) - 1;
 
         createUser()
-            .then(function () { return db.createSession('login', 'sid'); })
+            .then(function () { return db.createSession(1, 'sid'); })
             .then(function () {
                 var sel = engine.prepare(
                     "SELECT *"
@@ -342,7 +311,7 @@ describe("Database", function () {
         createUser()
             .then(function () { return createSession({ $last: time }); })
             .then(function () {
-                db.deleteSession('sid')
+                db.deleteSession(1)
                     .then(function () {
                         var sel = engine.prepare(
                             "SELECT *"
@@ -394,16 +363,16 @@ describe("Database", function () {
         createUser()
             .then(function () { return createSession({ $last: 0 }); })
             .then(function () {
-                db.refreshSession('sid')
+                db.refreshSession(1)
                     .then(function () {
                         var sel = engine.prepare(
                             "SELECT last"
                           + "   FROM sessions"
-                          + "   WHERE sid = $sid"
+                          + "   WHERE id = $id"
                         );
                         sel.get(
                             {
-                                $sid: 'sid'
+                                $id: 1
                             },
                             function (err, row) {
                                 expect(err).toBeNull();
@@ -420,16 +389,16 @@ describe("Database", function () {
         createUser()
             .then(function () { return createSession(); })
             .then(function () {
-                db.setSessionPassword('sid', true)
+                db.setSessionPassword(1, true)
                     .then(function () {
                         var sel = engine.prepare(
                             "SELECT auth_password"
                           + "   FROM sessions"
-                          + "   WHERE sid = $sid"
+                          + "   WHERE id = $id"
                         );
                         sel.get(
                             {
-                                $sid: 'sid'
+                                $id: 1
                             },
                             function (err, row) {
                                 expect(err).toBeNull();
@@ -446,16 +415,16 @@ describe("Database", function () {
         createUser()
             .then(function () { return createSession(); })
             .then(function () {
-                db.setSessionOtp('sid', true)
+                db.setSessionOtp(1, true)
                     .then(function () {
                         var sel = engine.prepare(
                             "SELECT auth_otp"
                           + "   FROM sessions"
-                          + "   WHERE sid = $sid"
+                          + "   WHERE id = $id"
                         );
                         sel.get(
                             {
-                                $sid: 'sid'
+                                $id: 1
                             },
                             function (err, row) {
                                 expect(err).toBeNull();

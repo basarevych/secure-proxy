@@ -20,7 +20,8 @@ function showUsage() {
     console.log("\nCommands:");
     console.log("\tstart\t\t\tStarts the daemon");
     console.log("\tlist-users\t\tList all the users in the database");
-    console.log("\tupdate-user\t\tCreates new user or modifies existing");
+    console.log("\tcreate-user\t\tCreates new user");
+    console.log("\tupdate-user\t\tUpdate existing user");
     console.log("\tdelete-user\t\tDeletes a user");
     console.log("\tlist-sessions\t\tLists existing sessions");
     console.log("\tdelete-session\t\tDeletes a session");
@@ -100,6 +101,10 @@ switch (argv['_'][0]) {
     case 'list-users':
         var email = argv['e'] ? argv['e'] : argv['email'];
         cons.listUsers(email);
+        break;
+
+    case 'create-user':
+        cons.createUser();
         break;
 
     case 'update-user':

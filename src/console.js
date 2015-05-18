@@ -61,11 +61,11 @@ Console.prototype.listUsers = function (email) {
         });
 };
 
-Console.prototype.updateUser = function () {
+Console.prototype.createUser = function () {
     var db = this.getDatabase(),
         rl = this.getReadline();
 
-    rl.write("==> Update user\n");
+    rl.write("==> Create user\n");
     rl.question('-> Username? ', function (username) {
         if (!username) {
             rl.write("*  Need username\n");
@@ -75,27 +75,63 @@ Console.prototype.updateUser = function () {
 
         rl.question('-> Password? ', function (password) {
             rl.question('-> Email? ', function (email) {
-                db.userExists(username)
-                    .then(function (exists) {
+                db.selectUsers({ login: username })
+                    .then(function (users) {
+                        if (users.length > 0) {
+                            rl.write("==> User already exists\n");
+                            rl.close();
+                            return;
+                        }
+
                         if (!password)
                             password = null;
                         if (!email)
                             email = null;
                             
-                        if (exists) {
-                            db.setUserPassword(username, password)
-                                .then(function () { return db.setUserEmail(username, email); })
-                                .then(function () {
-                                    rl.write("==> User exists, password and email changed\n");
-                                    rl.close();
-                                });
-                        } else {
-                            db.createUser(username, password, email)
-                                .then(function () {
-                                    rl.write("==> User created\n");
-                                    rl.close();
-                                });
+                        db.createUser(username, password, email)
+                            .then(function () {
+                                rl.write("==> User created\n");
+                                rl.close();
+                            });
+                    });
+            });
+        });
+    });
+};
+
+Console.prototype.updateUser = function () {
+    var db = this.getDatabase(),
+        rl = this.getReadline();
+
+    rl.write("==> Update user\n");
+    rl.question('-> ID? ', function (id) {
+        if (!id) {
+            rl.write("*  Need ID\n");
+            rl.close();
+            return;
+        }
+
+        rl.question('-> New password? ', function (password) {
+            rl.question('-> New email? ', function (email) {
+                db.selectUsers({ id: id })
+                    .then(function (users) {
+                        if (users.length == 0) {
+                            rl.write("==> User does not exist\n");
+                            rl.close();
+                            return;
                         }
+
+                        if (!password)
+                            password = null;
+                        if (!email)
+                            email = null;
+                            
+                        db.setUserPassword(id, password)
+                            .then(function () { return db.setUserEmail(id, email); })
+                            .then(function () {
+                                rl.write("==> Password and email changed\n");
+                                rl.close();
+                            });
                     });
             });
         });
@@ -107,25 +143,26 @@ Console.prototype.deleteUser = function () {
         rl = this.getReadline();
 
     rl.write("==> Delete user\n");
-    rl.question('-> Username? ', function (username) {
-        if (!username) {
-            rl.write("*  Need username\n");
+    rl.question('-> ID? ', function (id) {
+        if (!id) {
+            rl.write("*  Need ID\n");
             rl.close();
             return;
         }
 
-        db.userExists(username)
-            .then(function (exists) {
-                if (exists) {
-                    db.deleteUser(username)
-                        .then(function () {
-                            rl.write("==> User deleted\n");
-                            rl.close();
-                        });
-                } else {
-                    rl.write("==> User does not exists\n");
+        db.selectUsers({ id: id })
+            .then(function (users) {
+                if (users.length == 0) {
+                    rl.write("==> User does not exist\n");
                     rl.close();
+                    return;
                 }
+
+                db.deleteUser(id)
+                    .then(function () {
+                        rl.write("==> User deleted\n");
+                        rl.close();
+                    });
             });
     });
 };
@@ -163,25 +200,26 @@ Console.prototype.deleteSession = function () {
         rl = this.getReadline();
 
     rl.write("==> Delete session\n");
-    rl.question('-> SID? ', function (sid) {
-        if (!sid) {
-            rl.write("*  Need SID\n");
+    rl.question('-> ID? ', function (id) {
+        if (!id) {
+            rl.write("*  Need ID\n");
             rl.close();
             return;
         }
 
-        db.sessionExists(sid)
-            .then(function (exists) {
-                if (exists) {
-                    db.deleteSession(sid)
-                        .then(function () {
-                            rl.write("==> Session deleted\n");
-                            rl.close();
-                        });
-                } else {
-                    rl.write("==> Session does not exists\n");
+        db.selectSessions({ id: id })
+            .then(function (sessions) {
+                if (sessions.length == 0) {
+                    rl.write("==> Session does not exist\n");
                     rl.close();
+                    return;
                 }
+
+                db.deleteSession(id)
+                    .then(function () {
+                        rl.write("==> Session deleted\n");
+                        rl.close();
+                    });
             });
     });
 };
