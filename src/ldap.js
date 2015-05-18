@@ -81,10 +81,11 @@ Ldap.prototype.authenticate = function (login, password) {
             });
 
             search.on('end', function (result) {
-                db.userExists(login)
-                    .then(function (exists) {
-                        if (exists) {
-                            db.setUserEmail(login, email);
+                db.selectUsers({ login: login })
+                    .then(function (users) {
+                        var user = users.length && users[0];
+                        if (user) {
+                            db.setUserEmail(user['id'], email);
                             defer.resolve(true);
                             client.unbind();
                             return;

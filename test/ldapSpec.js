@@ -12,13 +12,13 @@ describe("Ldap", function () {
         ldap = new Ldap(sl);
         ldap.client = createSpyObj('client', [ 'bind', 'search', 'unbind' ]);
 
-        db = createSpyObj('db', [ 'userExists', 'createUser' ]);
-        db.userExists.andCallFake(function () {
+        db = createSpyObj('db', [ 'selectUsers', 'createUser', 'setUserEmail' ]);
+        db.createUser.andCallFake(function () {
             var defer = q.defer();
-            defer.resolve(false);
+            defer.resolve();
             return defer.promise;
         });
-        db.createUser.andCallFake(function () {
+        db.setUserEmail.andCallFake(function () {
             var defer = q.defer();
             defer.resolve();
             return defer.promise;
@@ -39,6 +39,12 @@ describe("Ldap", function () {
     });
 
     it("creates user", function (done) {
+        db.selectUsers.andCallFake(function () {
+            var defer = q.defer();
+            defer.resolve([]);
+            return defer.promise;
+        });
+
         ldap.client.bind.andCallFake(function (login, password, cb) {
             expect(login).toBe('login@HQ');
             expect(password).toBe('password');
@@ -67,8 +73,52 @@ describe("Ldap", function () {
         ldap.authenticate('login', 'password')
             .then(function (success) {
                 expect(success).toBeTruthy();
-                expect(db.userExists).toHaveBeenCalledWith('login');
+                expect(db.selectUsers).toHaveBeenCalledWith({ login: 'login' });
                 expect(db.createUser).toHaveBeenCalledWith('login', null, 'foo@bar');
+                expect(ldap.client.bind).toHaveBeenCalled();
+                expect(ldap.client.search).toHaveBeenCalled();
+                expect(ldap.client.unbind).toHaveBeenCalled();
+                done();
+            });
+    });
+
+    it("updates user", function (done) {
+        db.selectUsers.andCallFake(function () {
+            var defer = q.defer();
+            defer.resolve([ { id: 1 } ]);
+            return defer.promise;
+        });
+
+        ldap.client.bind.andCallFake(function (login, password, cb) {
+            expect(login).toBe('login@HQ');
+            expect(password).toBe('password');
+            cb(null);
+        });
+        ldap.client.search.andCallFake(function (group, opts, cb) {
+            expect(group).toBe('ou=users, ou=company, dc=hq, dc=company, dc=local');
+            expect(opts).toEqual({
+                filter: '(&(objectclass=user)(samaccountname=login))',
+                scope: 'sub',
+                attributes: ['mail']
+            });
+
+            var search = {
+                on: function (event, cb) {
+                    if (event == 'searchEntry')
+                        cb({ object: { mail: 'foo@bar' }});
+                    else if (event == 'end')
+                        cb();
+                },
+            };
+
+            cb(null, search);
+        });
+
+        ldap.authenticate('login', 'password')
+            .then(function (success) {
+                expect(success).toBeTruthy();
+                expect(db.selectUsers).toHaveBeenCalledWith({ login: 'login' });
+                expect(db.setUserEmail).toHaveBeenCalledWith(1, 'foo@bar');
                 expect(ldap.client.bind).toHaveBeenCalled();
                 expect(ldap.client.search).toHaveBeenCalled();
                 expect(ldap.client.unbind).toHaveBeenCalled();
