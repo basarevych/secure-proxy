@@ -84,8 +84,10 @@ Front.prototype.requestListener = function (protocol, req, res) {
         sid = query.query['sid'],
         urlParts = query.pathname.split('/');
 
-    if (!ipAddress)
+    if (!ipAddress) {
+        logger.error("No IP address");
         return front.returnInternalError(res);
+    }
 
     if (randomValue(1, 100) <= config['session']['gc_probability'])
         db.deleteOldSessions(config['session']['lifetime']);
@@ -159,7 +161,7 @@ Front.prototype.requestListener = function (protocol, req, res) {
             }
         })
         .catch(function (err) {
-            logger.error(err);
+            me.returnInternalError(res);
         });
 };
 
