@@ -45,8 +45,11 @@ Api.prototype.locale = function (protocol, sid, req, res) {
 
 Api.prototype.status = function (protocol, sid, req, res) {
     var db = this.sl.get('database'),
-        front = this.sl.get('front');
+        front = this.sl.get('front'),
+        query = url.parse(req.url, true);
 
+    if (!sid)
+        sid = query.query['sid'];
     if (!sid)
         return front.returnBadRequest(res);
 

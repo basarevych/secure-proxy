@@ -80,8 +80,8 @@ Front.prototype.requestListener = function (protocol, req, res) {
         logger = this.sl.get('logger'),
         ipAddress = req.connection.remoteAddress,
         cookies = this.parseCookies(req),
+        sid = cookies[config['namespace'] + 'sid'],
         query = url.parse(req.url, true),
-        sid = query.query['sid'],
         urlParts = query.pathname.split('/');
 
     if (!ipAddress) {
@@ -91,9 +91,6 @@ Front.prototype.requestListener = function (protocol, req, res) {
 
     if (randomValue(1, 100) <= config['session']['gc_probability'])
         db.deleteOldSessions(config['session']['lifetime']);
-
-    if (typeof sid == 'undefined')
-        sid = cookies[config['namespace'] + 'sid'];
 
     if (urlParts.length >= 2 && urlParts[0] == '' && urlParts[1] == 'secure-proxy') {
         if (urlParts.length == 2 || urlParts[2] == '') {

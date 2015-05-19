@@ -44,57 +44,58 @@ function submitPassword() {
                 return;
             }
 
-            if (data.success) {
-                $.ajax({
-                    url: '/secure-proxy/api/otp',
-                    method: 'GET',
-                    data: {
-                        action: 'get'
-                    },
-                    success: function (data) {
-                        if (data.reload) {
-                            $('#main-form').slideUp(function () { window.location.reload(); });
-                            return;
-                        }
-
-                        if (!data.success) {
-                            alert(gl.formatMessage('INTERNAL_ERROR'));
-                            return;
-                        }
-
-                        if (typeof data['qr_code'] == 'undefined') {
-                            $('#qr-show-group').hide();
-                            $('#reset-otp-button').show();
-                        } else {
-                            $('#qr-show-group').show();
-                            $('#reset-otp-button').hide();
-                            $('#qr-code').qrcode({
-                                "width": 80,
-                                "height": 80,
-                                "text": data.qr_code,
-                            });
-                        }
-                        $('#login')
-                            .addClass('disabled')
-                            .prop('disabled', true);
-                        $('#password')
-                            .addClass('disabled')
-                            .prop('disabled', true);
-                        $('#submit-password-button').hide();
-                        $('#reset-password-button').hide();
-                        $('#otp').val('');
-                        $('#otp-section').slideDown(function () { $('#otp').focus() });
-                    },
-                    error: function () {
-                        alert(gl.formatMessage('INTERNAL_ERROR'));
-                    },
-                });
-            } else {
+            if (!data.success) {
                 var msg = $('<div></div>');
                 msg.addClass('alert alert-danger')
                    .text(gl.formatMessage('INVALID_LOGIN'))
                    .appendTo(messages);
+                return;
             }
+
+            $.ajax({
+                url: '/secure-proxy/api/otp',
+                method: 'GET',
+                data: {
+                    action: 'get'
+                },
+                success: function (data) {
+                    if (data.reload) {
+                        $('#main-form').slideUp(function () { window.location.reload(); });
+                        return;
+                    }
+
+                    if (!data.success) {
+                        alert(gl.formatMessage('INTERNAL_ERROR'));
+                        return;
+                    }
+
+                    if (typeof data['qr_code'] == 'undefined') {
+                        $('#qr-show-group').hide();
+                        $('#reset-otp-button').show();
+                    } else {
+                        $('#qr-show-group').show();
+                        $('#reset-otp-button').hide();
+                        $('#qr-code').qrcode({
+                            "width": 80,
+                            "height": 80,
+                            "text": data.qr_code,
+                        });
+                    }
+                    $('#login')
+                        .addClass('disabled')
+                        .prop('disabled', true);
+                    $('#password')
+                        .addClass('disabled')
+                        .prop('disabled', true);
+                    $('#submit-password-button').hide();
+                    $('#reset-password-button').hide();
+                    $('#otp').val('');
+                    $('#otp-section').slideDown(function () { $('#otp').focus() });
+                },
+                error: function () {
+                    alert(gl.formatMessage('INTERNAL_ERROR'));
+                },
+            });
         },
         error: function () {
             $('#submit-password-button')
