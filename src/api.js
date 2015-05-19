@@ -72,7 +72,11 @@ Api.prototype.status = function (protocol, sid, req, res) {
 
 Api.prototype.logout = function (protocol, sid, req, res) {
     var db = this.sl.get('database'),
-        front = this.sl.get('front');
+        front = this.sl.get('front'),
+        ipAddress = req.connection.remoteAddress;
+
+    if (!ipAddress)
+        return front.returnInternalError(res);
 
     if (!sid)
         return front.returnBadRequest(res);
@@ -80,7 +84,7 @@ Api.prototype.logout = function (protocol, sid, req, res) {
     db.selectSessions({ sid: sid })
         .then(function (sessions) {
             var session = sessions.length && sessions[0];
-            if (!session) {
+            if (!session || session['ip_address'] != ipAddress) {
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: false }));
                 return;
@@ -105,9 +109,13 @@ Api.prototype.auth = function (protocol, sid, req, res) {
         ldap = this.sl.get('ldap'),
         front = this.sl.get('front'),
         config = this.sl.get('config'),
+        ipAddress = req.connection.remoteAddress,
         query = url.parse(req.url, true),
         action = query.query['action'],
         password = query.query['password'];
+
+    if (!ipAddress)
+        return front.returnInternalError(res);
 
     if (!sid || !action || !password)
         return front.returnBadRequest(res);
@@ -166,13 +174,13 @@ Api.prototype.auth = function (protocol, sid, req, res) {
                                 }
 
                                 prepareDefer.promise
-                                    .then(function () { return db.createSession(user['id'], sid) })
+                                    .then(function () { return db.createSession(user['id'], sid, ipAddress) })
                                     .then(function (id) { return db.setSessionPassword(id, true) })
                                     .then(function () {
                                         res.writeHead(200, { 'Content-Type': 'application/json' });
                                         res.end(JSON.stringify({
                                             success: true,
-                                            next: config['otp']['enable'] ? 'otp' : 'done',
+                                            reload: !config['otp']['enable'],
                                         }));
                                     })
                                     .catch(function (err) {
@@ -204,7 +212,7 @@ Api.prototype.auth = function (protocol, sid, req, res) {
                     return;
                 }
 
-                if (!user['password'] || user['secret'] != secret) {
+                if (!user['password']) {
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false }));
                     return;
@@ -232,25 +240,29 @@ Api.prototype.otp = function (protocol, sid, req, res) {
     var db = this.sl.get('database'),
         front = this.sl.get('front'),
         config = this.sl.get('config'),
+        ipAddress = req.connection.remoteAddress,
         query = url.parse(req.url, true),
         action = query.query['action'];
+
+    if (!ipAddress)
+        return front.returnInternalError(res);
 
     if (!sid || !action)
         return front.returnBadRequest(res);
 
-    db.selectSessions({ sid: sid })
-        .then(function (sessions) {
-            var session = sessions.length && sessions[0];
-            if (!session || !session.auth_password) {
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({
-                    success: false,
-                    next: 'password',
-                }));
-                return;
-            }
+    if (action == 'get') {
+        db.selectSessions({ sid: sid })
+            .then(function (sessions) {
+                var session = sessions.length && sessions[0];
+                if (!session || session['ip_address'] != ipAddress || !session['auth_password']) {
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({
+                        success: false,
+                        reload: true,
+                    }));
+                    return;
+                }
 
-            if (action == 'get') {
                 db.selectUsers({ id: session['user_id'] })
                     .then(function (users) {
                         var user = users.length && users[0];
@@ -269,10 +281,26 @@ Api.prototype.otp = function (protocol, sid, req, res) {
                     .catch(function (err) {
                         front.returnInternalError(res);
                     });
-            } else if (action == 'check') {
-                var otp = query.query['otp'];
-                if (!otp)
-                    return front.returnBadRequest(res);
+            })
+            .catch(function (err) {
+                front.returnInternalError(res);
+            });
+    } else if (action == 'check') {
+        var otp = query.query['otp'];
+        if (!otp)
+            return front.returnBadRequest(res);
+
+        db.selectSessions({ sid: sid })
+            .then(function (sessions) {
+                var session = sessions.length && sessions[0];
+                if (!session || session['ip_address'] != ipAddress || !session['auth_password']) {
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({
+                        success: false,
+                        reload: true,
+                    }));
+                    return;
+                }
 
                 db.checkUserOtpKey(session['user_id'], otp)
                     .then(function (correct) {
@@ -288,7 +316,7 @@ Api.prototype.otp = function (protocol, sid, req, res) {
                                 res.writeHead(200, { 'Content-Type': 'application/json' });
                                 res.end(JSON.stringify({
                                     success: true,
-                                    next: 'done',
+                                    reload: true,
                                 }));
                             })
                             .catch(function (err) {
@@ -298,47 +326,45 @@ Api.prototype.otp = function (protocol, sid, req, res) {
                     .catch(function (err) {
                         front.returnInternalError(res);
                     });
-            } else if (action == 'reset') {
-                var secret = query.query['secret'];
-                if (!secret)
-                    return front.returnBadRequest(res);
+            })
+            .catch(function (err) {
+                front.returnInternalError(res);
+            });
+    } else if (action == 'reset') {
+        var secret = query.query['secret'];
+        if (!secret)
+            return front.returnBadRequest(res);
 
-                db.selectUsers({ id: session['user_id'] })
-                    .then(function (users) {
-                        var user = users.length && users[0];
-                        if (!user)
-                            return front.returnInternalError(res);
+        db.selectUsers({ secret: secret })
+            .then(function (users) {
+                var user = users.length && users[0];
+                if (!user) {
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({
+                        success: false,
+                        reason: 'expired',
+                    }));
+                    return;
+                }
 
-                        if (secret != user['secret']) {
-                            res.writeHead(200, { 'Content-Type': 'application/json' });
-                            res.end(JSON.stringify({
-                                success: false,
-                                reason: 'expired',
-                            }));
-                            return;
-                        }
-
-                        db.setUserOtpConfirmed(session['user_id'], false)
-                            .then(function () { return db.generateUserOtpKey(session['user_id']); })
-                            .then(function () { return db.generateUserSecret(session['user_id']); })
-                            .then(function () {
-                                res.writeHead(200, { 'Content-Type': 'application/json' });
-                                res.end(JSON.stringify({ success: true }));
-                            })
-                            .catch(function (err) {
-                                front.returnInternalError(res);
-                            });
+                db.setUserOtpConfirmed(user['id'], false)
+                    .then(function () { return db.generateUserOtpKey(user['id']); })
+                    .then(function () { return db.generateUserSecret(user['id']); })
+                    .then(function () {
+                        res.writeHead(200, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ success: true }));
                     })
                     .catch(function (err) {
                         front.returnInternalError(res);
                     });
-            } else {
-                return front.returnBadRequest(res);
-            }
-        })
-        .catch(function (err) {
-            front.returnInternalError(res);
-        });
+            })
+            .catch(function (err) {
+                front.returnInternalError(res);
+            });
+    } else {
+        return front.returnBadRequest(res);
+    }
+
 };
 
 Api.prototype.resetRequest = function (protocol, sid, req, res) {

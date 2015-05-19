@@ -120,6 +120,7 @@ describe("Front", function () {
 
     it("requestListener collects garbage", function (done) {
         var req = {
+            connection: { remoteAddress: '127.0.0.1' },
             headers: {},
             url: '/some/path',
         };
@@ -140,6 +141,7 @@ describe("Front", function () {
 
     it("requestListener sets sid", function (done) {
         var req = {
+            connection: { remoteAddress: '127.0.0.1' },
             headers: {},
             url: '/some/path',
         };
@@ -163,9 +165,8 @@ describe("Front", function () {
 
     it("requestListener serves static file", function (done) {
         var req = {
-            headers: {
-                cookie: 'foobarsid=sid'
-            },
+            connection: { remoteAddress: '127.0.0.1' },
+            headers: { cookie: 'foobarsid=sid' },
             url: '/secure-proxy/static/auth/css/index.css',
         };
 
@@ -179,9 +180,8 @@ describe("Front", function () {
 
     it("requestListener serves API request", function (done) {
         var req = {
-            headers: {
-                cookie: 'foobarsid=sid'
-            },
+            connection: { remoteAddress: '127.0.0.1' },
+            headers: { cookie: 'foobarsid=sid' },
             url: '/secure-proxy/api/locale',
         };
 
@@ -194,9 +194,8 @@ describe("Front", function () {
 
     it("requestListener forwards guest to Auth app", function (done) {
         var req = {
-            headers: {
-                cookie: 'foobarsid=sid'
-            },
+            connection: { remoteAddress: '127.0.0.1' },
+            headers: { cookie: 'foobarsid=sid' },
             url: '/random/path',
         };
 
@@ -211,9 +210,8 @@ describe("Front", function () {
 
     it("requestListener proxies authenticated user request", function (done) {
         var req = {
-            headers: {
-                cookie: 'foobarsid=sid'
-            },
+            connection: { remoteAddress: '127.0.0.1' },
+            headers: { cookie: 'foobarsid=sid' },
             url: '/random/path',
         };
 
@@ -222,7 +220,7 @@ describe("Front", function () {
         });
 
         db.createUser('login', 'password', 'foo@bar')
-            .then(function () { return db.createSession(1, 'sid') })
+            .then(function () { return db.createSession(1, 'sid', '127.0.0.1') })
             .then(function () { return db.setSessionPassword(1, true) })
             .then(function () { return db.setSessionOtp(1, true) })
             .then(function () {
@@ -232,9 +230,8 @@ describe("Front", function () {
 
     it("parses cookies", function () {
         var req = {
-            headers: {
-                cookie: 'cookie1=value1; cookie2=value2',
-            }
+            connection: { remoteAddress: '127.0.0.1' },
+            headers: { cookie: 'cookie1=value1; cookie2=value2', }
         };
 
         var result = front.parseCookies(req);

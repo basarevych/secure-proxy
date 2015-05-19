@@ -44,6 +44,7 @@ Database.prototype.getEngine = function () {
           + "  id INTEGER PRIMARY KEY ASC NOT NULL,"
           + "  user_id INTERGER NOT NULL,"
           + "  sid VARCHAR(255) NOT NULL,"
+          + "  ip_address VARCHAR(255) NOT NULL,"
           + "  last TIMESTAMP NOT NULL,"
           + "  auth_password BOOLEAN NOT NULL,"
           + "  auth_otp BOOLEAN NOT NULL,"
@@ -438,13 +439,17 @@ Database.prototype.selectSessions = function (params) {
             bind['$sid'] = params['sid'];
             where.push(" s.sid = $sid");
         }
+        if (typeof params['ip_address'] != 'undefined') {
+            bind['$ip_address'] = params['ip_address'];
+            where.push(" s.ip_address = $ip_address");
+        }
         if (typeof params['login'] != 'undefined') {
             bind['$login'] = params['login'];
             where.push(" u.login = $login");
         }
     }
 
-    var sql = "SELECT s.id, s.user_id, u.login, s.sid, s.last, s.auth_password, s.auth_otp"
+    var sql = "SELECT s.id, s.user_id, u.login, s.sid, s.ip_address, s.last, s.auth_password, s.auth_otp"
       + "   FROM sessions s"
       + "   LEFT JOIN users u"
       + "       ON s.user_id = u.id";
@@ -470,7 +475,7 @@ Database.prototype.selectSessions = function (params) {
     return defer.promise;
 };
 
-Database.prototype.createSession = function (userId, sid) {
+Database.prototype.createSession = function (userId, sid, ip_address) {
     var logger = this.sl.get('logger'),
         engine = this.getEngine(),
         defer = q.defer(),
@@ -486,13 +491,14 @@ Database.prototype.createSession = function (userId, sid) {
 
             var ins = engine.prepare(
                 "INSERT INTO"
-              + "   sessions(user_id, sid, last, auth_password, auth_otp)"
-              + "   VALUES($user_id, $sid, $last, $auth_password, $auth_otp)"
+              + "   sessions(user_id, sid, ip_address, last, auth_password, auth_otp)"
+              + "   VALUES($user_id, $sid, $ip_address, $last, $auth_password, $auth_otp)"
             );
             ins.run(
                 {
                     $user_id: userId,
                     $sid: sid,
+                    $ip_address: ip_address,
                     $last: now,
                     $auth_password: false,
                     $auth_otp: false,

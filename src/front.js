@@ -78,10 +78,14 @@ Front.prototype.requestListener = function (protocol, req, res) {
         proxy = this.sl.get('proxy'),
         config = this.sl.get('config'),
         logger = this.sl.get('logger'),
+        ipAddress = req.connection.remoteAddress,
         cookies = this.parseCookies(req),
         query = url.parse(req.url, true),
         sid = query.query['sid'],
         urlParts = query.pathname.split('/');
+
+    if (!ipAddress)
+        return front.returnInternalError(res);
 
     if (randomValue(1, 100) <= config['session']['gc_probability'])
         db.deleteOldSessions(config['session']['lifetime']);
@@ -121,28 +125,7 @@ Front.prototype.requestListener = function (protocol, req, res) {
     }
 
     if (!sid) {
-        var defer = q.defer();
-
-        crypto.randomBytes(16, function (ex, buf) {
-            if (ex) {
-                logger('crypto randomBytes', ex);
-                defer.reject(ex);
-                return;
-            }
-
-            defer.resolve(buf.toString('hex'));
-        });
-
-        defer.promise
-            .then(function (random) {
-                var header = config['namespace'] + 'sid=' + random + '; path=/';
-                res.setHeader('set-cookie', header);
-                me.returnFile('auth/index.html', res);
-            })
-            .catch(function (err) {
-                me.returnInternalError(res);
-            });
-
+        this.generateSid(res);
         return;
     }
 
@@ -152,10 +135,15 @@ Front.prototype.requestListener = function (protocol, req, res) {
 
             var isAuthenticated = false;
             if (session) {
+                if (session['ip_address'] != ipAddress) {
+                    me.generateSid(res);
+                    return;
+                }
+
                 if (config['otp']['enable'])
-                    isAuthenticated = session.auth_password && session.auth_otp;
+                    isAuthenticated = session['auth_password'] && session['auth_otp'];
                 else
-                    isAuthenticated = session.auth_password;
+                    isAuthenticated = session['auth_password'];
             }
 
             if (isAuthenticated) {
@@ -185,6 +173,32 @@ Front.prototype.parseCookies = function (req) {
     });
 
     return list;
+};
+
+Front.prototype.generateSid = function (res) {
+    var me = this,
+        config = this.sl.get('config'),
+        defer = q.defer();
+
+    crypto.randomBytes(16, function (ex, buf) {
+        if (ex) {
+            logger('crypto randomBytes', ex);
+            defer.reject(ex);
+            return;
+        }
+
+        defer.resolve(buf.toString('hex'));
+    });
+
+    defer.promise
+        .then(function (random) {
+            var header = config['namespace'] + 'sid=' + random + '; path=/';
+            res.setHeader('set-cookie', header);
+            me.returnFile('auth/index.html', res);
+        })
+        .catch(function (err) {
+            me.returnInternalError(res);
+        });
 };
 
 function getRealPath(filename) {

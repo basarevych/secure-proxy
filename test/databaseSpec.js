@@ -56,6 +56,7 @@ describe("Database", function () {
         var data = {
             $user_id: params['$user_id'] || 1,
             $sid: params['$sid'] || 'sid',
+            $ip_address: params['$ip_address'] || '127.0.0.1',
             $last: params['$last'] || Math.round((new Date().getTime()) / 1000),
             $auth_password: params['$auth_password'] || false,
             $auth_otp: params['$auth_otp'] || false,
@@ -63,8 +64,8 @@ describe("Database", function () {
 
         var ins = engine.prepare(
             "INSERT INTO"
-          + "   sessions(user_id, sid, last, auth_password, auth_otp)"
-          + "   VALUES($user_id, $sid, $last, $auth_password, $auth_otp)"
+          + "   sessions(user_id, sid, ip_address, last, auth_password, auth_otp)"
+          + "   VALUES($user_id, $sid, $ip_address, $last, $auth_password, $auth_otp)"
         );
         ins.run(
             data,
@@ -268,6 +269,7 @@ describe("Database", function () {
                             user_id: 1,
                             login: 'login',
                             sid: 'sid',
+                            ip_address: '127.0.0.1',
                             last: time,
                             auth_password: 0,
                             auth_otp: 0
@@ -281,7 +283,7 @@ describe("Database", function () {
         var time = Math.round((new Date().getTime()) / 1000) - 1;
 
         createUser()
-            .then(function () { return db.createSession(1, 'sid'); })
+            .then(function () { return db.createSession(1, 'sid', '127.0.0.1'); })
             .then(function () {
                 var sel = engine.prepare(
                     "SELECT *"

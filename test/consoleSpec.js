@@ -143,7 +143,7 @@ describe("Console", function () {
 
     it("lists sessions", function (done) {
         db.createUser('login', 'password', 'foo@bar')
-            .then(function () { return db.createSession(1, 'sid') })
+            .then(function () { return db.createSession(1, 'sid', '127.0.0.1') })
             .then(function () { return db.selectSessions({ sid: 'sid' }) })
             .then(function (sessions) {
                 var session = sessions.length && sessions[0];
@@ -162,8 +162,8 @@ describe("Console", function () {
     it("lists sessions by login", function () {
         db.createUser('login', 'password', 'foo@bar')
             .then(function () { return db.createUser('login2', 'password2', 'foo@bar2'); })
-            .then(function () { return db.createSession('login', 'sid'); })
-            .then(function () { return db.createSession('login2', 'sid2'); })
+            .then(function () { return db.createSession('login', 'sid', '127.0.0.1'); })
+            .then(function () { return db.createSession('login2', 'sid2', '127.0.0.1'); })
             .then(function () { return db.selectSessions({ sid: 'sid' }); })
             .then(function (sessions) {
                 var session = sessions.length && sessions[0];
@@ -192,7 +192,7 @@ describe("Console", function () {
         });
 
         db.createUser('login', 'password', 'foo@bar')
-            .then(function () { return db.createSession(1, 'sid') })
+            .then(function () { return db.createSession(1, 'sid', '127.0.0.1') })
             .then(function () {
                 cons.deleteSession();
             });

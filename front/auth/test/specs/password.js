@@ -70,7 +70,7 @@ describe("Password", function () {
 
         it("reboots if done", function (done) {
             spyOn($, 'ajax').and.callFake(function (params) {
-                params.success({ success: true, next: 'done' });
+                params.success({ success: true, reload: true });
             });
 
             spyOn($.fn, 'slideUp').and.callFake(function (callback) {
@@ -178,10 +178,10 @@ describe("Password", function () {
             spyOn($, 'ajax').and.callFake(function (params) {
                 switch (++counter) {
                     case 1:
-                        params.success({ success: true, next: 'otp' });
+                        params.success({ success: true });
                         break;
                     case 2:
-                        params.success({ success: false, next: 'password' });
+                        params.success({ success: false, reload: true });
                         break;
                 }
             });

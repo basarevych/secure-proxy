@@ -44,6 +44,7 @@ describe("API", function () {
 
     it("locale sets cookie", function (done) {
         var req = {
+            connection: { remoteAddress: '127.0.0.1' },
             headers: {},
             url: '/secure-proxy/api/locale?set=en',
         };
@@ -64,6 +65,7 @@ describe("API", function () {
 
     it("locale reads cookie", function (done) {
         var req = {
+            connection: { remoteAddress: '127.0.0.1' },
             headers: {
                 cookie: 'foobarlocale=en',
             },
@@ -81,6 +83,7 @@ describe("API", function () {
 
     it("locale autoselect works", function (done) {
         var req = {
+            connection: { remoteAddress: '127.0.0.1' },
             headers: {
                 'accept-language': 'ru_RU,ru;q=0.8,en_US;q=0.6'
             },
@@ -105,13 +108,17 @@ describe("API", function () {
         });
 
         db.createUser('login', 'password', 'foo@bar')
-            .then(function () { return db.createSession(1, 'sid'); })
+            .then(function () { return db.createSession(1, 'sid', '127.0.0.1'); })
             .then(function () {
                 api.status('http', 'sid', undefined, res);
             });
     });
 
     it("logout", function (done) {
+        var req = {
+            connection: { remoteAddress: '127.0.0.1' },
+        };
+
         spyOn(db, 'deleteSession').andCallThrough();
 
         res.end.andCallFake(function (html) {
@@ -122,14 +129,15 @@ describe("API", function () {
         });
 
         db.createUser('login', 'password', 'foo@bar')
-            .then(function () { return db.createSession(1, 'sid'); })
+            .then(function () { return db.createSession(1, 'sid', '127.0.0.1'); })
             .then(function () {
-                api.logout('http', 'sid', undefined, res);
+                api.logout('http', 'sid', req, res);
             });
     });
 
     it("auth with valid db password", function (done) {
         var req = {
+            connection: { remoteAddress: '127.0.0.1' },
             headers: {},
             url: '/secure-proxy/api/auth?action=check&login=login&password=password',
         };
@@ -137,7 +145,7 @@ describe("API", function () {
         res.end.andCallFake(function (html) {
             var result = JSON.parse(html);
             expect(result['success']).toBeTruthy();
-            expect(result['next']).toBe('otp');
+            expect(result['reload']).toBeFalsy();
             db.selectSessions({ sid: 'sid' })
                 .then(function (sessions) {
                     var session = sessions.length && sessions[0];
@@ -147,7 +155,7 @@ describe("API", function () {
         });
 
         db.createUser('login', 'password', 'foo@bar')
-            .then(function () { return db.createSession(1, 'sid'); })
+            .then(function () { return db.createSession(1, 'sid', '127.0.0.1'); })
             .then(function () {
                 api.auth('http', 'sid', req, res);
             });
@@ -155,6 +163,7 @@ describe("API", function () {
 
     it("auth with valid ldap password", function (done) {
         var req = {
+            connection: { remoteAddress: '127.0.0.1' },
             headers: {},
             url: '/secure-proxy/api/auth?action=check&login=login&password=password',
         };
@@ -168,7 +177,7 @@ describe("API", function () {
         res.end.andCallFake(function (html) {
             var result = JSON.parse(html);
             expect(result['success']).toBeTruthy();
-            expect(result['next']).toBe('otp');
+            expect(result['reload']).toBeFalsy();
             expect(ldap.authenticate).toHaveBeenCalledWith('login', 'password');
             db.selectSessions({ sid: 'sid' })
                 .then(function (sessions) {
@@ -179,7 +188,7 @@ describe("API", function () {
         });
 
         db.createUser('login', null, 'foo@bar')
-            .then(function () { return db.createSession(1, 'sid'); })
+            .then(function () { return db.createSession(1, 'sid', '127.0.0.1'); })
             .then(function () {
                 api.auth('http', 'sid', req, res);
             });
@@ -187,6 +196,7 @@ describe("API", function () {
 
     it("auth with invalid password", function (done) {
         var req = {
+            connection: { remoteAddress: '127.0.0.1' },
             headers: {},
             url: '/secure-proxy/api/auth?action=check&login=login&password=password',
         };
@@ -204,7 +214,7 @@ describe("API", function () {
         });
 
         db.createUser('login', 'other password', 'foo@bar')
-            .then(function () { return db.createSession(1, 'sid'); })
+            .then(function () { return db.createSession(1, 'sid', '127.0.0.1'); })
             .then(function () {
                 api.auth('http', 'sid', req, res);
             });
@@ -212,6 +222,7 @@ describe("API", function () {
 
     it("auth sets password", function (done) {
         var req = {
+            connection: { remoteAddress: '127.0.0.1' },
             headers: {},
             url: '/secure-proxy/api/auth?action=set&password=password&secret=foobar',
         };
@@ -233,7 +244,7 @@ describe("API", function () {
         });
 
         db.createUser('login', 'old password', 'foo@bar')
-            .then(function () { return db.createSession(1, 'sid'); })
+            .then(function () { return db.createSession(1, 'sid', '127.0.0.1'); })
             .then(function () { return db.selectUsers({ login: 'login' }); })
             .then(function (users) {
                 var user = users.length && users[0];
@@ -245,6 +256,7 @@ describe("API", function () {
 
     it("otp with invalid session", function (done) {
         var req = {
+            connection: { remoteAddress: '127.0.0.1' },
             headers: {},
             url: '/secure-proxy/api/otp?action=get',
         };
@@ -252,12 +264,12 @@ describe("API", function () {
         res.end.andCallFake(function (html) {
             var result = JSON.parse(html);
             expect(result['success']).toBeFalsy();
-            expect(result['next']).toBe('password');
+            expect(result['reload']).toBeTruthy();
             done();
         });
 
         db.createUser('login', 'password', 'foo@bar')
-            .then(function () { return db.createSession(1, 'sid'); })
+            .then(function () { return db.createSession(1, 'sid', '127.0.0.1'); })
             .then(function () {
                 api.otp('http', 'sid', req, res);
             });
@@ -265,6 +277,7 @@ describe("API", function () {
 
     it("otp returns qr code", function (done) {
         var req = {
+            connection: { remoteAddress: '127.0.0.1' },
             headers: {},
             url: '/secure-proxy/api/otp?action=get',
         };
@@ -280,7 +293,7 @@ describe("API", function () {
         });
 
         db.createUser('login', 'password', 'foo@bar')
-            .then(function () { return db.createSession(1, 'sid'); })
+            .then(function () { return db.createSession(1, 'sid', '127.0.0.1'); })
             .then(function () { return db.setSessionPassword(1, true); })
             .then(function () {
                 api.otp('http', 'sid', req, res);
@@ -289,6 +302,7 @@ describe("API", function () {
 
     it("otp no qr code second time", function (done) {
         var req = {
+            connection: { remoteAddress: '127.0.0.1' },
             headers: {},
             url: '/secure-proxy/api/otp?action=get',
         };
@@ -301,7 +315,7 @@ describe("API", function () {
 
         db.createUser('login', 'password', 'foo@bar')
             .then(function () { return db.setUserOtpConfirmed(1, true); })
-            .then(function () { return db.createSession(1, 'sid'); })
+            .then(function () { return db.createSession(1, 'sid', '127.0.0.1'); })
             .then(function () { return db.setSessionPassword(1, true); })
             .then(function () {
                 api.otp('http', 'sid', req, res);
@@ -310,6 +324,7 @@ describe("API", function () {
 
     it("otp with correct code", function (done) {
         var req = {
+            connection: { remoteAddress: '127.0.0.1' },
             headers: {},
             url: '/secure-proxy/api/otp?action=check&otp=foobar',
         };
@@ -317,12 +332,12 @@ describe("API", function () {
         res.end.andCallFake(function (html) {
             var result = JSON.parse(html);
             expect(result['success']).toBeTruthy();
-            expect(result['next']).toBe('done');
+            expect(result['reload']).toBeTruthy();
             done();
         });
 
         db.createUser('login', 'password', 'foo@bar')
-            .then(function () { return db.createSession(1, 'sid'); })
+            .then(function () { return db.createSession(1, 'sid', '127.0.0.1'); })
             .then(function () { return db.setSessionPassword(1, true); })
             .then(function () { return db.selectUsers({ login: 'login' }); })
             .then(function (users) {
@@ -335,6 +350,7 @@ describe("API", function () {
 
     it("otp with incorrect code", function (done) {
         var req = {
+            connection: { remoteAddress: '127.0.0.1' },
             headers: {},
             url: '/secure-proxy/api/otp?action=check&otp=foobar',
         };
@@ -346,7 +362,7 @@ describe("API", function () {
         });
 
         db.createUser('login', 'password', 'foo@bar')
-            .then(function () { return db.createSession(1, 'sid'); })
+            .then(function () { return db.createSession(1, 'sid', '127.0.0.1'); })
             .then(function () { return db.setSessionPassword(1, true); })
             .then(function () {
                 api.otp('http', 'sid', req, res);
@@ -355,6 +371,7 @@ describe("API", function () {
 
     it("otp resets code", function (done) {
         var req = {
+            connection: { remoteAddress: '127.0.0.1' },
             headers: {},
             url: '/secure-proxy/api/otp?action=reset&secret=foobar',
         };
@@ -374,7 +391,7 @@ describe("API", function () {
 
         db.createUser('login', 'password', 'foo@bar')
             .then(function () { return db.setUserOtpConfirmed(1, true); })
-            .then(function () { return db.createSession(1, 'sid'); })
+            .then(function () { return db.createSession(1, 'sid', '127.0.0.1'); })
             .then(function () { return db.setSessionPassword(1, true); })
             .then(function () { return db.selectUsers({ login: 'login' }); })
             .then(function (users) {
@@ -397,6 +414,7 @@ describe("API", function () {
         });
 
         var req = {
+            connection: { remoteAddress: '127.0.0.1' },
             headers: {
                 host: 'localhost:8000',
             },
@@ -414,7 +432,7 @@ describe("API", function () {
         });
 
         db.createUser('login', 'password', 'foo@bar')
-            .then(function () { return db.createSession(1, 'sid'); })
+            .then(function () { return db.createSession(1, 'sid', '127.0.0.1'); })
             .then(function () {
                 api.resetRequest('http', 'sid', req, res);
             });
@@ -432,6 +450,7 @@ describe("API", function () {
         });
 
         var req = {
+            connection: { remoteAddress: '127.0.0.1' },
             headers: {
                 host: 'localhost:8000',
             },
@@ -449,7 +468,7 @@ describe("API", function () {
         });
 
         db.createUser('login', 'password', 'foo@bar')
-            .then(function () { return db.createSession(1, 'sid'); })
+            .then(function () { return db.createSession(1, 'sid', '127.0.0.1'); })
             .then(function () {
                 api.resetRequest('http', 'sid', req, res);
             });

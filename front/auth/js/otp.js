@@ -32,14 +32,12 @@ function submitOtp() {
                 .text(gl.formatMessage('SUBMIT_LABEL'));
             $('#reset-otp-button').show();
 
-            if (data.success) {
+            if (data.reload) {
                 $('#main-form').slideUp(function () { window.location.reload(); });
                 return;
-            } else {
-                if (data.next == 'password') {
-                    window.location.reload();
-                    return;
-                }
+            }
+
+            if (!data.success) {
                 var msg = $('<div></div>');
                 msg.addClass('alert alert-danger')
                    .text(gl.formatMessage('INVALID_OTP'))

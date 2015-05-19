@@ -55,7 +55,7 @@ describe("OTP", function () {
 
         it("reboots when requested", function () {
             spyOn($, 'ajax').and.callFake(function (params) {
-                params.success({ success: false, next: 'password' });
+                params.success({ success: false, reload: true });
             });
 
             spyOn(window.location, 'reload');
@@ -68,7 +68,7 @@ describe("OTP", function () {
 
         it("reboots if done", function (done) {
             spyOn($, 'ajax').and.callFake(function (params) {
-                params.success({ success: true });
+                params.success({ success: true, reload: true });
             });
 
             spyOn($.fn, 'slideUp').and.callFake(function (callback) {
