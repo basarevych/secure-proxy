@@ -228,6 +228,30 @@ describe("Front", function () {
             });
     });
 
+    it("requestListener checks IP", function (done) {
+        var req = {
+            connection: { remoteAddress: '10.0.0.1' },
+            headers: { cookie: 'foobarsid=sid' },
+            url: '/random/path',
+        };
+
+        var res = createSpyObj('res', [ 'setHeader' ]);
+
+        spyOn(front, 'returnFile').andCallFake(function (name) {
+            expect(name).toBe('auth/index.html');
+            expect(proxy.web).not.toHaveBeenCalled();
+            done();
+        });
+
+        db.createUser('login', 'password', 'foo@bar')
+            .then(function () { return db.createSession(1, 'sid', '127.0.0.1') })
+            .then(function () { return db.setSessionPassword(1, true) })
+            .then(function () { return db.setSessionOtp(1, true) })
+            .then(function () {
+                front.requestListener('http', req, res);
+            });
+    });
+
     it("parses cookies", function () {
         var req = {
             connection: { remoteAddress: '127.0.0.1' },
