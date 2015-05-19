@@ -86,6 +86,19 @@ Config
 
   Secure proxy will drop priviliges to this user and group (if ran by root).
 
+* **session**:
+
+  ```js
+  {
+    lifetime: 24 * 60 * 60,
+    gc_probabilty: 15,
+  }
+  ```
+
+  **lifetime** is the period of inactivity (seconds) after which the session will be deleted
+
+  **gc_probabilty** is the chance (0 - 100%) of running session garbage collector
+
 * **otp**:
 
   ```js
@@ -110,10 +123,10 @@ Config
   ```
 
   Enable/Disable LDAP users. For example, if user login is 'user' the proxy will try to
-  authenticate 'user@HQ' user with the given password. If successful it will then search
-  'ou=users, ou=company, dc=hq, dc=company, dc=local' with sAMAccountName == 'user' and
-  look for 'mail' attribute to get user email address. If all is OK the user is created
-  in the local database and is granted access.
+  authenticate 'user@HQ' user with the given password. If successful the access will be
+  granted and the user will be created. Then the group
+  'ou=users, ou=company, dc=hq, dc=company, dc=local' will be searched with 
+  sAMAccountName == 'user' for 'mail' attribute which will be stored as user's email.
 
 * **email**:
 
