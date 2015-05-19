@@ -239,4 +239,23 @@ describe("Front", function () {
         expect(result['cookie1']).toBe('value1');
         expect(result['cookie2']).toBe('value2');
     });
+
+    it("generates SID", function (done) {
+        var res = createSpyObj('res', [ 'setHeader' ]);
+
+        var headerName, headerValue;
+        res.setHeader.andCallFake(function (name, value) {
+            headerName = name;
+            headerValue = value;
+        });
+
+        spyOn(front, 'returnFile').andCallFake(function (name) {
+            expect(headerName).toBe('set-cookie');
+            expect(headerValue.indexOf('foobarsid=')).not.toBe(-1);
+            expect(name).toBe('auth/index.html');
+            done();
+        });
+
+        front.generateSid(res);
+    });
 });
