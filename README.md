@@ -23,7 +23,7 @@ Create and edit config.js:
 Add users:
 > node src/index.js update-user
 
-Replace www with your user (specified in config.js):
+Replace www with your user (the same as in config.js):
 > chown -R www data
 > chmod -R ug+w data
 
@@ -35,7 +35,7 @@ Replace www with your user (specified in config.js):
 
 ```sh
 # cd /usr/local/etc/rc.d
-# ln -s /usr/local/secure-proxy/scripts/freebsd-rc.d/secure-proxy
+# cp /usr/local/secure-proxy/scripts/freebsd-rc.d/secure-proxy ./
 ```
 
 Add to /etc/rc.conf:
@@ -51,7 +51,14 @@ Run secure-proxy:
 
 **Linux**
 
-TODO: Write a systemd unit file
+```sh
+# cd /etc/systemd/system
+# cp /usr/local/secure-proxy/scripts/linux-systemd/secure-proxy.service ./
+
+# systemctl daemon-reload
+# systemctl enable secure-proxy
+# systemctl start secure-proxy
+```
 
 Usage
 -----
@@ -85,6 +92,44 @@ Config
 * **user** and **group**
 
   Secure proxy will drop priviliges to this user and group (if ran by root).
+
+* **http**:
+
+  ```js
+  {
+    enable: true,
+    host: 'example.com',
+    port: 80,
+    base_url: 'http://example.com',
+  }
+  ```
+
+  Enable/Disable HTTP proxy on the given host:port. 
+
+  **host** is a DNS name or an IP address.
+
+  **base_url** is used to construct password reset email links.
+
+* **https**:
+
+  ```
+  {
+    enable: false,
+    host: 'example.com',
+    port: 443,
+    base_url: 'https://example.com',
+    key: '/etc/certs/server.unencrypted.key',
+    cert: '/etc/certs/server.crt',
+  }
+  ```
+
+  Enable/Disable HTTPS proxy on the given host:port.
+
+  **host** is a DNS name or an IP address.
+
+  **base_url** is used to construct password reset email links.
+
+  **key** and **cert** should point to your OpenSSL key and certificate files.
 
 * **session**:
 
@@ -141,41 +186,3 @@ Config
   ```
 
   SMTP server (outgoing mail) parameters
-
-* **http**:
-
-  ```js
-  {
-    enable: true,
-    host: 'example.com',
-    port: 80,
-    base_url: 'http://example.com',
-  }
-  ```
-
-  Enable/Disable HTTP proxy on the given host:port. 
-
-  **host** is a DNS name or an IP address.
-
-  **base_url** is used to construct password reset email links.
-
-* **https**:
-
-  ```
-  {
-    enable: false,
-    host: 'example.com',
-    port: 443,
-    base_url: 'https://example.com',
-    key: '/etc/certs/server.unencrypted.key',
-    cert: '/etc/certs/server.crt',
-  }
-  ```
-
-  Enable/Disable HTTPS proxy on the given host:port.
-
-  **host** is a DNS name or an IP address.
-
-  **base_url** is used to construct password reset email links.
-
-  **key** and **cert** should point to your OpenSSL key and certificate files.
