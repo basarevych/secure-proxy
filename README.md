@@ -63,12 +63,12 @@ Run it without parameters to get the list of commands:
 > node src/index.js
 ```
 
-Basically all you need to do is to add users ('update-user' command).
+Basically all you need to do is to add users ('create-user' command).
 
 Active directory users (LDAP)
 -----------------------------
 
-You do not need to create LDAP users by hand (with 'update-user'). LDAP users will be
+You do not need to create LDAP users by hand (with 'create-user'). LDAP users will be
 created on the fly when they successfully authenticate themselves.
 
 Config
@@ -108,7 +108,8 @@ Config
   }
   ```
 
-  Enable/Disable OTP (One Time Password) protection (Google Authenticator).
+  Enable/Disable OTP (One Time Password) protection (Google Authenticator). **name** is the site
+  name (as shown in Google Authenticator interface).
 
 * **ldap**:
 
@@ -126,7 +127,7 @@ Config
   authenticate 'user@HQ' user with the given password. If successful the access will be
   granted and the user will be created. Then the group
   'ou=users, ou=company, dc=hq, dc=company, dc=local' will be searched with 
-  sAMAccountName == 'user' for 'mail' attribute which will be stored as user's email.
+  samaccountname == 'user' for 'mail' attribute which will be stored as user's email.
 
 * **email**:
 
