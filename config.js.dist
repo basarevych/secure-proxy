@@ -6,8 +6,24 @@ module.exports = {
     user: 'www',                    // Drop privileges to these
     group: 'www',
 
+    http: {
+        enable: true,               // Enable HTTP proxy
+        host: 'example.com',        // Listen on this ip/address
+        port: 80,
+        base_url: 'http://example.com', // Used to construct password reset email URLs
+    },
+
+    https: {
+        enable: false,              // Enable HTTPS proxy
+        host: 'example.com',        // Listen on this ip/address
+        port: 443,
+        base_url: 'https://example.com', // Used to construct password reset email URLs
+        key: '/etc/certs/server.unencrypted.key',
+        cert: '/etc/certs/server.crt',
+    },
+
     session: {
-        lifetime: 24 * 60 * 60,     // Seconds
+        lifetime: 24 * 60 * 60,     // Session life time (seconds)
         gc_probabilty: 15,          // Garbage collection probability (0-100%)
     },
 
@@ -29,21 +45,5 @@ module.exports = {
         port: 25,
         ssl: false,
         from: 'www@localhost',      // 'From' header of email sent by proxy
-    },
-
-    http: {
-        enable: true,               // Enable HTTP proxy
-        host: 'example.com',
-        port: 80,
-        base_url: 'http://example.com', // Used to construct password reset email URLs
-    },
-
-    https: {
-        enable: false,              // Enable HTTPS proxy
-        host: 'example.com',
-        port: 443,
-        base_url: 'https://example.com', // Used to construct password reset email URLs
-        key: '/etc/certs/server.unencrypted.key',
-        cert: '/etc/certs/server.crt',
     },
 };

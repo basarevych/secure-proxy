@@ -1,0 +1,9 @@
+[Service]
+ExecStart=/usr/bin/node /usr/local/secure-proxy/src/index.js start
+Restart=always
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=secure-proxy
+
+[Install]
+WantedBy=multi-user.target
