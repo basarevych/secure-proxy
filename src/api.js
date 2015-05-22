@@ -159,32 +159,44 @@ Api.prototype.auth = function (protocol, sid, req, res) {
                             return;
                         }
 
-                        db.selectSessions({ sid: sid })
-                            .then(function (sessions) {
-                                var session = sessions.length && sessions[0];
-                                var prepareDefer = q.defer();
-
-                                if (session) {
-                                    db.deleteSession(session['id'])
-                                        .then(function () {
-                                            prepareDefer.resolve();
-                                        })
-                                        .catch(function (err) {
-                                            prepareDefer.reject(err);
-                                        });
-                                } else {
-                                    prepareDefer.resolve();
+                        db.selectUsers({ login: login })
+                            .then(function (users) {
+                                var user = users.length && users[0];
+                                if (!user) {
+                                    logger.error('No such user');
+                                    return front.returnInternalError(res);
                                 }
 
-                                prepareDefer.promise
-                                    .then(function () { return db.createSession(user['id'], sid, ipAddress) })
-                                    .then(function (id) { return db.setSessionPassword(id, true) })
-                                    .then(function () {
-                                        res.writeHead(200, { 'Content-Type': 'application/json' });
-                                        res.end(JSON.stringify({
-                                            success: true,
-                                            reload: !config['otp']['enable'],
-                                        }));
+                                db.selectSessions({ sid: sid })
+                                    .then(function (sessions) {
+                                        var session = sessions.length && sessions[0];
+                                        var prepareDefer = q.defer();
+
+                                        if (session) {
+                                            db.deleteSession(session['id'])
+                                                .then(function () {
+                                                    prepareDefer.resolve();
+                                                })
+                                                .catch(function (err) {
+                                                    prepareDefer.reject(err);
+                                                });
+                                        } else {
+                                            prepareDefer.resolve();
+                                        }
+
+                                        prepareDefer.promise
+                                            .then(function () { return db.createSession(user['id'], sid, ipAddress) })
+                                            .then(function (id) { return db.setSessionPassword(id, true) })
+                                            .then(function () {
+                                                res.writeHead(200, { 'Content-Type': 'application/json' });
+                                                res.end(JSON.stringify({
+                                                    success: true,
+                                                    reload: !config['otp']['enable'],
+                                                }));
+                                            })
+                                            .catch(function (err) {
+                                                front.returnInternalError(res);
+                                            });
                                     })
                                     .catch(function (err) {
                                         front.returnInternalError(res);
@@ -269,8 +281,10 @@ Api.prototype.otp = function (protocol, sid, req, res) {
                 db.selectUsers({ id: session['user_id'] })
                     .then(function (users) {
                         var user = users.length && users[0];
-                        if (!user)
+                        if (!user) {
+                            logger.error('No such user');
                             return front.returnInternalError(res);
+                        }
 
                         var result = { success: true };
                         if (!user['otp_confirmed']) {
