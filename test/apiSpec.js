@@ -100,6 +100,11 @@ describe("API", function () {
     });
 
     it("status", function (done) {
+        var req = {
+            connection: { remoteAddress: '127.0.0.1' },
+            url: '/secure-proxy/api/status',
+        };
+
         res.end.andCallFake(function (html) {
             var result = JSON.parse(html);
             expect(result['authenticated']).toBeTruthy();
@@ -110,7 +115,7 @@ describe("API", function () {
         db.createUser('login', 'password', 'foo@bar')
             .then(function () { return db.createSession(1, 'sid', '127.0.0.1'); })
             .then(function () {
-                api.status('http', 'sid', undefined, res);
+                api.status('http', 'sid', req, res);
             });
     });
 
