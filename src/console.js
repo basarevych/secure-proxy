@@ -185,6 +185,7 @@ Console.prototype.listSessions = function (login) {
                     "\nID:\t\t\t" + sessions[i]['id']
                     + "\nLogin:\t\t\t" + sessions[i]['login']
                     + "\nSID:\t\t\t" + sessions[i]['sid']
+                    + "\nIP address:\t\t" + sessions[i]['ip_address']
                     + "\nLast seen:\t\t" + date.toString()
                     + "\nProvided password:\t" + (sessions[i]['auth_password'] ? 'true' : 'false')
                     + "\nProvided OTP:\t\t" + (sessions[i]['auth_otp'] ? 'true' : 'false')

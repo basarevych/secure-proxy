@@ -151,6 +151,7 @@ describe("Console", function () {
                     expect(checkArray(output, /ID:\s+1$/)).toBeTruthy();
                     expect(checkArray(output, /Login:\s+login$/)).toBeTruthy();
                     expect(checkArray(output, /SID:\s+sid$/)).toBeTruthy();
+                    expect(checkArray(output, /IP address:\s+127.0.0.1$/)).toBeTruthy();
                     expect(checkArray(output, /password:\s+false$/)).toBeTruthy();
                     expect(checkArray(output, /OTP:\s+false$/)).toBeTruthy();
                     done();
