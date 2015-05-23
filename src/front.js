@@ -44,7 +44,7 @@ Front.prototype.returnBadRequest = function (res) {
     );
 };
 
-Front.prototype.returnFile = function (filename, res) {
+Front.prototype.returnFile = function (filename, res, httpCode) {
     var me = this,
         logger = this.sl.get('logger');
 
@@ -66,7 +66,7 @@ Front.prototype.returnFile = function (filename, res) {
             return me.returnInternalError(res);
         }
 
-        res.writeHead(200, { 'Content-Type': type });
+        res.writeHead(httpCode ? httpCode : 200, { 'Content-Type': type });
         res.end(data);
     });
 };
@@ -154,7 +154,7 @@ Front.prototype.requestListener = function (protocol, req, res) {
                         me.returnInternalError(res);
                     });
             } else {
-                me.returnFile('auth/index.html', res);
+                me.returnFile('auth/index.html', res, 407);
             }
         })
         .catch(function (err) {
@@ -193,7 +193,7 @@ Front.prototype.generateSid = function (res) {
         .then(function (random) {
             var header = config['namespace'] + 'sid=' + random + '; path=/';
             res.setHeader('set-cookie', header);
-            me.returnFile('auth/index.html', res);
+            me.returnFile('auth/index.html', res, 407);
         })
         .catch(function (err) {
             me.returnInternalError(res);
