@@ -76,11 +76,14 @@ Api.prototype.status = function (protocol, sid, req, res) {
 Api.prototype.logout = function (protocol, sid, req, res) {
     var db = this.sl.get('database'),
         front = this.sl.get('front'),
+        logger = this.sl.get('logger'),
         config = this.sl.get('config'),
         ipAddress = req.connection.remoteAddress;
 
-    if (!ipAddress)
+    if (!ipAddress) {
+        logger.error('No IP address');
         return front.returnInternalError(res);
+    }
 
     if (!sid)
         return front.returnBadRequest(res);
@@ -120,8 +123,10 @@ Api.prototype.auth = function (protocol, sid, req, res) {
         action = query.query['action'],
         password = query.query['password'];
 
-    if (!ipAddress)
+    if (!ipAddress) {
+        logger.error('No IP address');
         return front.returnInternalError(res);
+    }
 
     if (!sid || !action || !password)
         return front.returnBadRequest(res);
@@ -263,8 +268,10 @@ Api.prototype.otp = function (protocol, sid, req, res) {
         query = url.parse(req.url, true),
         action = query.query['action'];
 
-    if (!ipAddress)
+    if (!ipAddress) {
+        logger.error('No IP address');
         return front.returnInternalError(res);
+    }
 
     if (!sid || !action)
         return front.returnBadRequest(res);
@@ -315,7 +322,8 @@ Api.prototype.otp = function (protocol, sid, req, res) {
         db.selectSessions({ sid: sid })
             .then(function (sessions) {
                 var session = sessions.length && sessions[0];
-                if (!session || session['ip_address'] != ipAddress || !session['auth_password']) {
+                if (!session || !session['auth_password']
+                        || (config['session']['ip_protection'] && session['ip_address'] != ipAddress)) {
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({
                         success: false,

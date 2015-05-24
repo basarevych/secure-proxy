@@ -123,10 +123,8 @@ Front.prototype.requestListener = function (protocol, req, res) {
         return me.returnNotFound(res);
     }
 
-    if (!sid) {
-        this.generateSid(res);
-        return;
-    }
+    if (!sid)
+        return this.generateSid(res);
 
     db.selectSessions({ sid: sid })
         .then(function (sessions) {
@@ -134,10 +132,8 @@ Front.prototype.requestListener = function (protocol, req, res) {
 
             var isAuthenticated = false;
             if (session) {
-                if (config['session']['ip_protection'] && session['ip_address'] != ipAddress) {
-                    me.generateSid(res);
-                    return;
-                }
+                if (config['session']['ip_protection'] && session['ip_address'] != ipAddress)
+                    return me.generateSid(res);
 
                 if (config['otp']['enable'])
                     isAuthenticated = session['auth_password'] && session['auth_otp'];
