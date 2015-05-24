@@ -190,3 +190,81 @@ Config
   ```
 
   SMTP server (outgoing mail) parameters
+
+Interaction with the proxy
+==========================
+
+If address of the proxy is http://example.com then URLs starting with http://example.com/secure-proxy/
+will be reserved for the proxy itself.
+
+* **Logging out**
+
+  Navigate to **/secure-proxy/api/logout** to log out of the proxy
+
+* **Authentication status**
+
+  Send GET request to **/secure-proxy/api/status** with parameter **sid** equal to your session ID
+  to get authentication status of the user.
+
+  PHP example (put it on the site behind the proxy):
+
+  ```php
+  if (!isset($_COOKIE['secureproxysid']))
+    die("No session ID");
+
+  $sid = $_COOKIE['secureproxysid'];
+
+  // Change the hostname below:
+  $data = file_get_contents('http://example.com/secure-proxy/api/status?sid=' . $sid);
+
+  $json = json_decode($data, true);
+
+  echo "Authenticated: " . ($json['authenticated'] ? "TRUE" : "FALSE");
+  if ($json['authenticated'])
+    echo "<br>Logged in as: " . $json['login'];
+  ```
+
+* **Detection of expiration of the session**
+
+  If session expires and user navigates to a new URL or refreshes the page they will be provided
+  with the login screen again, this happens automatically, no action is required.
+
+  But if the session expires and the user makes AJAX request to the server, the request will fail
+  and the page will not work as expected. One need to detect this situation and reload the page
+  if the session is expired (to be able to relogin).
+
+  If the proxy wants the user to authenticate themselves it will return HTTP result code 418 instead
+  of 200 "OK". You can check for this event in your frontend.
+
+  If, for example, your page has the following jQuery code:
+
+  ```js
+    $.ajax({
+      url: '/some/url/to/backend.php',
+      data: {
+        param: 'some data',
+      },
+      success: function (data) {
+        // Do something with the data...
+      },
+    });
+  ```
+
+  You can enhance it like this:
+
+  ```js
+    $.ajax({
+      url: '/some/url/to/backend.php',
+      data: {
+        param: 'some data',
+      },
+      success: function (data) {
+        // Do something with the data...
+      },
+      statusCode: {
+        418: function () {                  // Reload the page on HTTP 418
+            window.location.reload();
+        },
+      },
+    });
+  ```
