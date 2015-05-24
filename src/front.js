@@ -134,7 +134,7 @@ Front.prototype.requestListener = function (protocol, req, res) {
 
             var isAuthenticated = false;
             if (session) {
-                if (session['ip_address'] != ipAddress) {
+                if (config['session']['ip_protection'] && session['ip_address'] != ipAddress) {
                     me.generateSid(res);
                     return;
                 }

@@ -25,6 +25,9 @@ describe("API", function () {
 
         var config = {
             namespace: 'foobar',
+            session: {
+                ip_protection: false,
+            },
             otp: {
                 enable: true,
                 name: 'Example',

@@ -137,12 +137,16 @@ Config
   {
     lifetime: 24 * 60 * 60,
     gc_probabilty: 15,
+    ip_protection: false,
   }
   ```
 
   **lifetime** is the period of inactivity (seconds) after which the session will be deleted
 
   **gc_probabilty** is the chance (0 - 100%) of running session garbage collector
+
+  **ip_protection** flag enables source IP address check (the session will not work if IP
+  address changes).
 
 * **otp**:
 

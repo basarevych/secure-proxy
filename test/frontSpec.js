@@ -21,6 +21,7 @@ describe("Front", function () {
             session: {
                 lifetime: 100,
                 gc_probability: 0,
+                ip_protection: true,
             },
             otp: {
                 enable: true,

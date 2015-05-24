@@ -25,6 +25,7 @@ module.exports = {
     session: {
         lifetime: 24 * 60 * 60,     // Session life time (seconds)
         gc_probabilty: 15,          // Garbage collection probability (0-100%)
+        ip_protection: false,       // The session will not work if source IP address changes
     },
 
     otp: {
