@@ -4,7 +4,7 @@ WORK IN PROGRESS
 Secure Proxy
 ============
 
-HTTP/HTTPS reverse proxy that adds login/password and Google Authenticator protection to the target site.
+HTTP/HTTPS reverse proxy which adds login/password and Google Authenticator protection to the target site.
 
 Installation
 ------------
@@ -60,8 +60,8 @@ Run secure-proxy:
 # systemctl start secure-proxy
 ```
 
-Usage
------
+Console Usage
+-------------
 
 Run it without parameters to get the list of commands:
 
