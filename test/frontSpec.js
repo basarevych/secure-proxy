@@ -253,6 +253,30 @@ describe("Front", function () {
             });
     });
 
+    it("requestListener with IP check disabled", function (done) {
+        var req = {
+            connection: { remoteAddress: '10.0.0.1' },
+            headers: { cookie: 'foobarsid=sid' },
+            url: '/random/path',
+        };
+
+        var res = createSpyObj('res', [ 'setHeader' ]);
+
+        proxy.web.andCallFake(function () {
+            done();
+        });
+
+        config['session']['ip_protection'] = false;
+
+        db.createUser('login', 'password', 'foo@bar')
+            .then(function () { return db.createSession(1, 'sid', '127.0.0.1') })
+            .then(function () { return db.setSessionPassword(1, true) })
+            .then(function () { return db.setSessionOtp(1, true) })
+            .then(function () {
+                front.requestListener('http', req, res);
+            });
+    });
+
     it("parses cookies", function () {
         var req = {
             connection: { remoteAddress: '127.0.0.1' },
