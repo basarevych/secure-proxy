@@ -227,9 +227,9 @@ describe("Password", function () {
             expect($('#reset-messages')).toHaveText('EMAIL_SENT');
         });
 
-        it("handles extern password", function () {
+        it("handles external password", function () {
             spyOn($, 'ajax').and.callFake(function (params) {
-                params.success({ success: false, reason: 'extern-password' });
+                params.success({ success: false, reason: 'external-password' });
             });
 
             resetPassword();

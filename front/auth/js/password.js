@@ -146,10 +146,10 @@ function resetPassword() {
                            .text(gl.formatMessage('EMAIL_SENT'))
                            .appendTo(messages);
                     } else {
-                        var extern = data.reason && data.reason == 'extern-password';
+                        var external = data.reason && data.reason == 'external-password';
                         var msg = $('<div></div>');
                         msg.addClass('alert alert-danger')
-                           .text(gl.formatMessage(extern ? 'EXTERN_PASSWORD' : 'INVALID_EMAIL'))
+                           .text(gl.formatMessage(external ? 'EXTERN_PASSWORD' : 'INVALID_EMAIL'))
                            .appendTo(messages);
                         $('#modal-submit').removeClass('disabled').prop('disabled', false);
                     }

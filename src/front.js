@@ -135,6 +135,12 @@ Front.prototype.requestListener = function (protocol, req, res) {
                 if (config['session']['ip_protection'] && session['ip_address'] != ipAddress)
                     return me.generateSid(res);
 
+                var last = Math.round((new Date().getTime()) / 1000) - config['session']['lifetime'];
+                if (session['last'] < last) {
+                    db.deleteSession(session['id']);
+                    return me.generateSid(res);
+                }
+
                 if (config['otp']['enable'])
                     isAuthenticated = session['auth_password'] && session['auth_otp'];
                 else

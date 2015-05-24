@@ -420,10 +420,10 @@ Api.prototype.resetRequest = function (protocol, sid, req, res) {
     if (type == 'password') {
         db.selectUsers({ email: userEmail })
             .then(function (users) {
-                var externPassword = false, promises = [];
+                var externalPassword = false, promises = [];
                 users.forEach(function (user) {
                     if (!user['password']) {
-                        externPassword = true;
+                        externalPassword = true;
                         return;
                     }
 
@@ -439,11 +439,11 @@ Api.prototype.resetRequest = function (protocol, sid, req, res) {
 
                 q.all(promises)
                     .then(function () {
-                        if (externPassword) {
+                        if (externalPassword) {
                             res.writeHead(200, { 'Content-Type': 'application/json' });
                             res.end(JSON.stringify({
                                 success: false,
-                                reason: 'extern-password',
+                                reason: 'external-password',
                             }));
                         } else {
                             res.writeHead(200, { 'Content-Type': 'application/json' });
