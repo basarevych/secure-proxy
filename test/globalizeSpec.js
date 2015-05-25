@@ -13,6 +13,6 @@ describe("Globalize", function () {
 
     it("translates", function () {
         var gl = globalize.getLocale('en');
-        expect(gl.formatMessage('RESET_PASSWORD_SUBJECT')).toBe('Reset password confirmation');
+        expect(gl.formatMessage('RESET_PASSWORD_SUBJECT')).toBe('Password reset confirmation');
     });
 });

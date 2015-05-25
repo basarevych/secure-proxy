@@ -29,7 +29,6 @@ Console.prototype.getReadline = function () {
         output: process.stdout,
     });
 
-    this.rl = rl;
     return rl;
 };
 
