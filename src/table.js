@@ -18,7 +18,7 @@ Table.prototype.print = function (header, rows) {
     for (var i = 0; i < header.length; i++) {
         var columnWidth = header[i].length;
         rows.forEach(function (el) {
-            if (el[i].length > columnWidth)
+            if (el[i] && el[i].length > columnWidth)
                 columnWidth = el[i].length;
         });
         widths.push(columnWidth);

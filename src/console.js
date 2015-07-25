@@ -216,7 +216,7 @@ Console.prototype.listSessions = function (login) {
 
     db.selectSessions(params)
         .then(function (sessions) {
-            var header = [ 'ID', 'Login', 'IP' ],
+            var header = [ 'ID', 'Login', 'IP', 'Date' ],
                 rows = [];
 
             for (var i = 0; i < sessions.length; i++) {
@@ -229,6 +229,8 @@ Console.prototype.listSessions = function (login) {
                 row.push(date.toString());
                 rows.push(row);
             }
+
+            table.print(header, rows);
         });
 };
 
