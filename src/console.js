@@ -34,9 +34,11 @@ Console.prototype.getReadline = function () {
 
 Console.prototype.listUsers = function (email) {
     var db = this.getDatabase(),
-        rl = this.getReadline();
+        rl = this.getReadline(),
+        table = this.sl.get('table');
 
-    rl.write("==> User list" + (email ? " (" + email + ")\n" : "\n"));
+    rl.write("==> User list" + (email ? " (" + email + ")\n\n" : "\n\n"));
+    rl.close();
 
     var params = {};
     if (email)
@@ -44,20 +46,54 @@ Console.prototype.listUsers = function (email) {
 
     db.selectUsers(params)
         .then(function (users) {
+            var header = [ 'ID', 'Login', 'eMail' ],
+                rows = [];
+
             for (var i = 0; i < users.length; i++) {
+                var row = [];
+                row.push(users[i]['id']);
+                row.push(users[i]['login']);
+                row.push(users[i]['email']);
+                rows.push(row);
+            }
+
+            table.print(header, rows);
+        });
+};
+
+Console.prototype.dumpUser = function () {
+    var db = this.getDatabase(),
+        rl = this.getReadline();
+
+    rl.write("==> Dump user\n");
+    rl.question('-> ID? ', function (id) {
+        if (!id) {
+            rl.write("*  Need ID\n");
+            rl.close();
+            return;
+        }
+
+        db.selectUsers({ id: id })
+            .then(function (users) {
+                if (users.length == 0) {
+                    rl.write("==> User does not exist\n");
+                    rl.close();
+                    return;
+                }
+
                 rl.write(
-                    "\nID:\t\t" + users[i]['id']
-                    + "\nLogin:\t\t" + users[i]['login']
-                    + "\nPassword:\t" + users[i]['password']
-                    + "\nEmail:\t\t" + users[i]['email']
-                    + "\nSecret:\t\t" + users[i]['secret']
-                    + "\nOTP Key:\t" + users[i]['otp_key']
-                    + "\nOTP Confirmed:\t" + (users[i]['otp_confirmed'] ? 'true' : 'false')
+                    "\nID:\t\t" + users[0]['id']
+                    + "\nLogin:\t\t" + users[0]['login']
+                    + "\nPassword:\t" + users[0]['password']
+                    + "\nEmail:\t\t" + users[0]['email']
+                    + "\nSecret:\t\t" + users[0]['secret']
+                    + "\nOTP Key:\t" + users[0]['otp_key']
+                    + "\nOTP Confirmed:\t" + (users[0]['otp_confirmed'] ? 'true' : 'false')
                     + "\n"
                 );
-            }
-            rl.close();
-        });
+                rl.close();
+            });
+    });
 };
 
 Console.prototype.createUser = function () {
@@ -168,9 +204,11 @@ Console.prototype.deleteUser = function () {
 
 Console.prototype.listSessions = function (login) {
     var db = this.getDatabase(),
-        rl = this.getReadline();
+        rl = this.getReadline(),
+        table = this.sl.get('table');
 
-    rl.write("==> Session list" + (login ? " (" + login + ")\n" : "\n"));
+    rl.write("==> Session list" + (login ? " (" + login + ")\n\n" : "\n\n"));
+    rl.close();
 
     var params = {};
     if (login)
@@ -178,22 +216,58 @@ Console.prototype.listSessions = function (login) {
 
     db.selectSessions(params)
         .then(function (sessions) {
+            var header = [ 'ID', 'Login', 'IP' ],
+                rows = [];
+
             for (var i = 0; i < sessions.length; i++) {
                 var date = new Date(sessions[i]['last']);
-                rl.write(
-                    "\nID:\t\t\t" + sessions[i]['id']
-                    + "\nLogin:\t\t\t" + sessions[i]['login']
-                    + "\nSID:\t\t\t" + sessions[i]['sid']
-                    + "\nIP address:\t\t" + sessions[i]['ip_address']
-                    + "\nLast seen:\t\t" + date.toString()
-                    + "\nProvided password:\t" + (sessions[i]['auth_password'] ? 'true' : 'false')
-                    + "\nProvided OTP:\t\t" + (sessions[i]['auth_otp'] ? 'true' : 'false')
-                    + "\n"
-                );
+
+                var row = [];
+                row.push(sessions[i]['id']);
+                row.push(sessions[i]['login']);
+                row.push(sessions[i]['ip_address']);
+                row.push(date.toString());
+                rows.push(row);
             }
-            rl.close();
         });
 };
+
+Console.prototype.dumpSession = function () {
+    var db = this.getDatabase(),
+        rl = this.getReadline();
+
+    rl.write("==> Dump session\n");
+    rl.question('-> ID? ', function (id) {
+        if (!id) {
+            rl.write("*  Need ID\n");
+            rl.close();
+            return;
+        }
+
+        db.selectSessions({ id: id })
+            .then(function (sessions) {
+                if (sessions.length == 0) {
+                    rl.write("==> Session does not exist\n");
+                    rl.close();
+                    return;
+                }
+
+                var date = new Date(sessions[0]['last']);
+                rl.write(
+                    "\nID:\t\t\t" + sessions[0]['id']
+                    + "\nLogin:\t\t\t" + sessions[0]['login']
+                    + "\nSID:\t\t\t" + sessions[0]['sid']
+                    + "\nIP address:\t\t" + sessions[0]['ip_address']
+                    + "\nLast seen:\t\t" + date.toString()
+                    + "\nProvided password:\t" + (sessions[0]['auth_password'] ? 'true' : 'false')
+                    + "\nProvided OTP:\t\t" + (sessions[0]['auth_otp'] ? 'true' : 'false')
+                    + "\n"
+                );
+                rl.close();
+            });
+    });
+};
+
 
 Console.prototype.deleteSession = function () {
     var db = this.getDatabase(),

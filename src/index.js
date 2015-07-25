@@ -13,6 +13,7 @@ var fs              = require('fs'),
     Email           = require('./email.js'),
     Ldap            = require('./ldap.js'),
     Globalize       = require('./globalize.js'),
+    Table           = require('./table.js'),
     Console         = require('./console.js');
 
 function showUsage() {
@@ -20,10 +21,12 @@ function showUsage() {
     console.log("\nCommands:");
     console.log("\tstart\t\t\tStarts the daemon");
     console.log("\tlist-users\t\tList all the users in the database");
+    console.log("\tdump-user\t\tDump information on the user");
     console.log("\tcreate-user\t\tCreates new user");
     console.log("\tupdate-user\t\tUpdate existing user");
     console.log("\tdelete-user\t\tDeletes a user");
     console.log("\tlist-sessions\t\tLists existing sessions");
+    console.log("\tdump-session\t\tDump information on the session");
     console.log("\tdelete-session\t\tDeletes a session");
     console.log("\n'list-users' options:");
     console.log("\t-e, --email=name@host\tOptional. Limit query to this email");
@@ -44,6 +47,7 @@ var sl          = new ServiceLocator(),
     email       = new Email(sl),
     ldap        = new Ldap(sl),
     globalize   = new Globalize(sl),
+    table       = new Table(sl),
     cons        = new Console(sl),
     logger      = sl.get('logger'),
     config      = sl.get('config');
@@ -103,6 +107,10 @@ switch (argv['_'][0]) {
         cons.listUsers(email);
         break;
 
+    case 'dump-user':
+        cons.dumpUser();
+        break;
+
     case 'create-user':
         cons.createUser();
         break;
@@ -118,6 +126,10 @@ switch (argv['_'][0]) {
     case 'list-sessions':
         var login = argv['l'] ? argv['l'] : argv['login'];
         cons.listSessions(login);
+        break;
+
+    case 'dump-session':
+        cons.dumpSession();
         break;
 
     case 'delete-session':
