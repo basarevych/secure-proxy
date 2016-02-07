@@ -78,6 +78,8 @@ Ldap.prototype.authenticate = function (login, password) {
                 email = entry.object[config['ldap']['email_attr_name']];
                 if (typeof email == 'undefined')
                     email = null;
+                else
+                    email = email.trim().toLowerCase();
             });
 
             search.on('end', function (result) {

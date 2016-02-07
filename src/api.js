@@ -135,6 +135,8 @@ Api.prototype.auth = function (protocol, sid, req, res) {
         var login = query.query['login'];
         if (!login)
             return front.returnBadRequest(res);
+        else
+            login = login.trim().toLowerCase();
 
         db.selectUsers({ login: login })
             .then(function (users) {
@@ -413,6 +415,8 @@ Api.prototype.resetRequest = function (protocol, sid, req, res) {
 
     if (globalize.supportedLocales.indexOf(lang) == -1)
         return front.returnBadRequest(res);
+
+    userEmail = userEmail.trim().toLowerCase();
 
     var gl = globalize.getLocale(lang);
     var baseUrlQuery = url.parse(config[protocol]['base_url']);
